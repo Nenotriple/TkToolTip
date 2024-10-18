@@ -7,8 +7,8 @@ Add customizable tooltips to any Tkinter widget.
 <br>
 
 
-# 💾Install
-
+# 💾 Install
+![Static Badge](https://img.shields.io/badge/git-Python_3.10%2B-green)🚩
 
 1) Install in your enviroment:
 
@@ -22,7 +22,7 @@ Add customizable tooltips to any Tkinter widget.
 <br>
 
 
-# 📝Usage:
+# 📝 Usage:
 
 A) Directly create a tooltip:
 
@@ -38,7 +38,7 @@ B) Create and store a tooltip for later configuration:
 <br>
 
 
-# 💡Parameters
+# 💡 Parameters
 
 `widget` : `tkinter.Widget`
 - The widget to attach the tooltip to
@@ -47,49 +47,49 @@ B) Create and store a tooltip for later configuration:
 - Tooltip text (default is an empty string)
 
 `delay` : `int, optional`
-- Delay before showing the tooltip in milliseconds (default is 0)
+- Delay before showing the tooltip in milliseconds (default is `0`)
 
 `padx` : `int, optional`
-- X-offset of the tooltip from the origin (default is 0)
+- X-offset of the tooltip from the origin (default is `0`)
 
 `pady` : `int, optional`
-- Y-offset of the tooltip from the origin (default is 0)
+- Y-offset of the tooltip from the origin (default is `0`)
 
 `ipadx` : `int, optional`
-- Horizontal internal padding (default is 0)
+- Horizontal internal padding (default is `0`)
 
 `ipady` : `int, optional`
-- Vertical internal padding (default is 0)
+- Vertical internal padding (default is `0`)
 
 `state` : `str, optional`
-- Tooltip state, "normal" or "disabled" (default is None)
+- Tooltip state, "normal" or "disabled" (default is `None`)
 
 `bg` : str, `optional`
-- Background color (default is "#ffffee")
+- Background color (default is `"#ffffee"`)
 
 `fg` : str, `optional`
-- Foreground (text) color (default is "black")
+- Foreground (text) color (default is `"black"`)
 
 `font` : `tuple, optional`
-- Font of the text (default is ("TkDefaultFont", 8, "normal"))
+- Font of the text (default is `("TkDefaultFont", 8, "normal")`)
 
 `borderwidth` : `int, optional`
-- Border width (default is 1)
+- Border width (default is `1`)
 
 `relief` : `str, optional`
-- Border style (default is "solid")
+- Border style (default is `"solid"`)
 
 `justify` : `str, optional`
-- Text justification (default is "center")
+- Text justification (default is `"center"`)
 
 `wraplength` : `int, optional`
-- Maximum line width for text wrapping (default is 0, which disables wrapping)
+- Maximum line width for text wrapping (default is `0`, which disables wrapping)
 
 `fade_in` : `int, optional`
-- Fade-in time in milliseconds (default is 125)
+- Fade-in time in milliseconds (default is `125`)
 
 `fade_out` : `int, optional`
-- Fade-out time in milliseconds (default is 50)
+- Fade-out time in milliseconds (default is `50`)
 
 `origin` : `str, optional`
-- Origin point of the tooltip, "mouse" or "widget" (default is "mouse")
+- Origin point of the tooltip, `"mouse"` or `"widget"` (default is `"mouse"`)
