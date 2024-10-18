@@ -4,7 +4,10 @@
 Add customizable tooltips to any Tkinter widget.
 
 
-# Install
+<br>
+
+
+# 💾Install
 
 
 1) Install in your enviroment:
@@ -19,7 +22,7 @@ Add customizable tooltips to any Tkinter widget.
 <br>
 
 
-# Usage:
+# 📝Usage:
 
 A) Directly create a tooltip:
 
@@ -35,7 +38,7 @@ B) Create and store a tooltip for later configuration:
 <br>
 
 
-# Parameters
+# 💡Parameters
 
 `widget` : `tkinter.Widget`
 - The widget to attach the tooltip to
