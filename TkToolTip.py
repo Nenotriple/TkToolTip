@@ -1,6 +1,6 @@
 """
 ########################################
-#           Tkinter ToolTips           #
+#              TkToolTip               #
 #   Version : v1.06                    #
 #   Author  : github.com/Nenotriple    #
 ########################################
@@ -35,7 +35,7 @@ from tkinter import Toplevel, Label
 
 #endregion
 ################################################################################################################################################
-#region - TkToolTips
+#region - TkToolTip
 
 
 '''Default tooltip parameters'''
