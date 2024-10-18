@@ -1,4 +1,4 @@
-# TkToolTips
+# TkToolTip
 
 
 Add customizable tooltips to any Tkinter widget.
@@ -9,11 +9,11 @@ Add customizable tooltips to any Tkinter widget.
 
 1) Install in your enviroment:
 
-  - `pip install git+https://github.com/Nenotriple/TkToolTips.git`
+  - `pip install git+https://github.com/Nenotriple/TkToolTip.git`
 
 2) Import within your python script:
 
-  - `from TkToolTips.TkToolTips import TkToolTips as ToolTip`
+  - `from TkToolTip import TkToolTip as Tip`
 
 
 <br>
