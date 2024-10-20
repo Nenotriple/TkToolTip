@@ -16,7 +16,7 @@ Add customizable tooltips to any Tkinter widget.
 
 2) Import within your python script:
 
-  - `from TkToolTip import TkToolTip as Tip`
+  - `from TkToolTip.TkToolTip import TkToolTip as Tip`
 
 
 <br>
