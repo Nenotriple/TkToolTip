@@ -26,11 +26,11 @@ Add customizable tooltips to any Tkinter widget.
 
 A) Directly create a tooltip:
 
-1) ```TkToolTip.create(widget, text="example")```
+1) ```Tip.create(widget, text="example")```
 
 B) Create and store a tooltip for later configuration:
 
-1) ```tooltip = TkToolTip.create(widget, text="example")```
+1) ```tooltip = Tip.create(widget, text="example")```
 
 2) ```tooltip.config(text="Example!")```
 
