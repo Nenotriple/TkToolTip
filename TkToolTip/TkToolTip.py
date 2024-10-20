@@ -15,8 +15,8 @@ A) Directly create a tooltip:
      TkToolTip.create(widget, text="example")
 
 B) Create and store a tooltip for later configuration:
-   tooltip = TkToolTip.create(widget, text="example")
-   tooltip.config(text="Example!")
+     tooltip = TkToolTip.create(widget, text="example")
+     tooltip.config(text="Example!")
 
 """
 
