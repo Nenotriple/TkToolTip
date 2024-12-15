@@ -1,7 +1,7 @@
 """
 ########################################
 #              TkToolTip               #
-#   Version : v1.06                    #
+#   Version : v1.07                    #
 #   Author  : github.com/Nenotriple    #
 ########################################
 
@@ -130,25 +130,25 @@ class TkToolTip:
 
 
     def __init__(self,
-                 widget,
-                 text=TEXT,
-                 delay=DELAY,
-                 padx=PADX,
-                 pady=PADY,
-                 ipadx=IPADX,
-                 ipady=IPADY,
-                 state=STATE,
-                 bg=BG,
-                 fg=FG,
-                 font=FONT,
-                 borderwidth=BORDERWIDTH,
-                 relief=RELIEF,
-                 justify=JUSTIFY,
-                 wraplength=WRAPLENGTH,
-                 fade_in=FADE_IN,
-                 fade_out=FADE_OUT,
-                 origin=ORIGIN
-                 ):
+                widget,
+                text=TEXT,
+                delay=DELAY,
+                padx=PADX,
+                pady=PADY,
+                ipadx=IPADX,
+                ipady=IPADY,
+                state=STATE,
+                bg=BG,
+                fg=FG,
+                font=FONT,
+                borderwidth=BORDERWIDTH,
+                relief=RELIEF,
+                justify=JUSTIFY,
+                wraplength=WRAPLENGTH,
+                fade_in=FADE_IN,
+                fade_out=FADE_OUT,
+                origin=ORIGIN
+                ):
 
         self.widget = widget
         self.text = text
@@ -217,18 +217,16 @@ class TkToolTip:
         self.tip_window.wm_geometry(f"+{x}+{y}")
         self.tip_window.attributes("-alpha", 0.0 if self.fade_in else 1.0)
         label = Label(self.tip_window,
-                      text=self.text,
-                      background=self.bg,
-                      foreground=self.fg,
-                      font=self.font,
-                      relief=self.relief,
-                      borderwidth=self.borderwidth,
-                      justify=self.justify,
-                      wraplength=self.wraplength
-                      )
-        label.pack(ipadx=self.ipadx,
-                   ipady=self.ipady
-                   )
+            text=self.text,
+            background=self.bg,
+            foreground=self.fg,
+            font=self.font,
+            relief=self.relief,
+            borderwidth=self.borderwidth,
+            justify=self.justify,
+            wraplength=self.wraplength
+        )
+        label.pack(ipadx=self.ipadx, ipady=self.ipady)
         if self.fade_in:
             self._fade(self.fade_in, 0.0, 1.0)
 
@@ -277,54 +275,82 @@ class TkToolTip:
         step(0)
 
 
+    def _update_visible_tooltip(self):
+        """Update the tooltip if it's currently visible"""
+        if not self.tip_window:
+            return
+        label = self.tip_window.winfo_children()[0]
+        label.config(
+            text=self.text,
+            background=self.bg,
+            foreground=self.fg,
+            font=self.font,
+            relief=self.relief,
+            borderwidth=self.borderwidth,
+            justify=self.justify,
+            wraplength=self.wraplength
+        )
+        label.pack(ipadx=self.ipadx, ipady=self.ipady)
+        x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+        current_alpha = self.tip_window.attributes("-alpha")
+        self.tip_window.attributes("-alpha", current_alpha)
+
+
     def config(self,
-               text=None,
-               delay=None,
-               padx=None,
-               pady=None,
-               ipadx=None,
-               ipady=None,
-               state=None,
-               bg=None,
-               fg=None,
-               font=None,
-               borderwidth=None,
-               relief=None,
-               justify=None,
-               wraplength=None,
-               fade_in=None,
-               fade_out=None,
-               origin=None
-               ):
+            text=None,
+            delay=None,
+            padx=None,
+            pady=None,
+            ipadx=None,
+            ipady=None,
+            state=None,
+            bg=None,
+            fg=None,
+            font=None,
+            borderwidth=None,
+            relief=None,
+            justify=None,
+            wraplength=None,
+            fade_in=None,
+            fade_out=None,
+            origin=None
+            ):
         """Update the tooltip configuration with the given parameters."""
+        needs_update = False
         for param, value in locals().items():
             if value is not None:
                 if param == 'state':
                     assert value in ["normal", "disabled"], "Invalid state"
-                setattr(self, param, value)
+                if param != 'self':
+                    setattr(self, param, value)
+                    needs_update = True
+
+        if needs_update and self.tip_window:
+            self._update_visible_tooltip()
 
 
     @classmethod
     def create(cls,
-               widget,
-               text=TEXT,
-               delay=DELAY,
-               padx=PADX,
-               pady=PADY,
-               ipadx=IPADX,
-               ipady=IPADY,
-               state=STATE,
-               bg=BG,
-               fg=FG,
-               font=FONT,
-               borderwidth=BORDERWIDTH,
-               relief=RELIEF,
-               justify=JUSTIFY,
-               wraplength=WRAPLENGTH,
-               fade_in=FADE_IN,
-               fade_out=FADE_OUT,
-               origin=ORIGIN
-               ):
+            widget,
+            text=TEXT,
+            delay=DELAY,
+            padx=PADX,
+            pady=PADY,
+            ipadx=IPADX,
+            ipady=IPADY,
+            state=STATE,
+            bg=BG,
+            fg=FG,
+            font=FONT,
+            borderwidth=BORDERWIDTH,
+            relief=RELIEF,
+            justify=JUSTIFY,
+            wraplength=WRAPLENGTH,
+            fade_in=FADE_IN,
+            fade_out=FADE_OUT,
+            origin=ORIGIN
+            ):
         """Create a tooltip for the specified widget with the given parameters."""
         return cls(widget, text, delay, padx, pady, ipadx, ipady, state, bg, fg, font, borderwidth, relief, justify, wraplength, fade_in, fade_out, origin)
 
@@ -337,29 +363,23 @@ class TkToolTip:
 '''
 
 
-v1.06 changes:
+v1.07 changes:
 
 
   - New:
-    - Added `justify` parameter: Configure text justification in the tooltip. (Default is "center")
-    - Added `wraplength` parameter: Configure the maximum line width for text wrapping. (Default is 0, which disables wrapping)
-    - Added `fade_in` and `fade_out` parameters: Configure fade-in and fade-out times. (Default is 100 and 50, ms)
-    - Added `origin` parameter: Configure the origin point of the tooltip. (Default is "mouse")
-
+    - Config changes made to a visible tooltip will now be reflected in real-time.
 
 <br>
 
 
   - Fixed:
-    - Issue where the underlying widget would be impossible to interact with after hiding the tooltip.
-
+    -
 
 <br>
 
 
   - Other changes:
-    - Now uses `TkDefaultFont` instead of Tahoma as the default font for the tooltip text.
-    - Refactored the code to be more readable and maintainable.
+    -
 
 
 '''
