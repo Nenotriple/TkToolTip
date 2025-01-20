@@ -40,9 +40,9 @@ from tkinter import Toplevel, Label
 
 '''Default tooltip parameters'''
 TEXT = ""
-DELAY = 0
-PADX = 0
-PADY = 0
+DELAY = 10
+PADX = 1
+PADY = 1
 IPADX = 2
 IPADY = 2
 STATE = "normal"
