@@ -1,9 +1,7 @@
 """
-########################################
-#              TkToolTip               #
-#   Version : v1.07                    #
-#   Author  : github.com/Nenotriple    #
-########################################
+# Name:     TkToolTip
+# Version:  v1.07
+# Author:   github.com/Nenotriple
 
 Description:
 ------------
@@ -17,25 +15,15 @@ A) Directly create a tooltip:
 B) Create and store a tooltip for later configuration:
      tooltip = TkToolTip.create(widget, text="example")
      tooltip.config(text="Example!")
-
 """
 
 
-################################################################################################################################################
-#region - Imports
-
-
-# Standard Library
+# Standard
 import time
+from typing import Optional, Tuple
 
-
-# Standard Library - GUI
+# Standard - GUI
 from tkinter import Toplevel, Label
-
-
-#endregion
-################################################################################################################################################
-#region - TkToolTip
 
 
 '''Default tooltip parameters'''
@@ -48,7 +36,7 @@ IPADY = 2
 STATE = "normal"
 BG = "#ffffee"
 FG = "black"
-FONT = ("TkDefaultFont", "8", "normal")
+FONT: Optional[Tuple[str, int, str]]  = ("TkDefaultFont", 8, "normal")
 BORDERWIDTH = 1
 RELIEF = "solid"
 JUSTIFY = "center"
@@ -56,6 +44,7 @@ WRAPLENGTH = 0
 FADE_IN = 125
 FADE_OUT = 50
 ORIGIN = "mouse"
+ANCHOR = "nw"
 
 
 class TkToolTip:
@@ -68,55 +57,60 @@ class TkToolTip:
         The widget to attach the tooltip to
 
     text : str, optional
-        Tooltip text (default is an empty string)
+        Tooltip text ("")
 
     delay : int, optional
-        Delay before showing the tooltip in milliseconds (default is 0)
+        Delay before showing the tooltip in milliseconds (10)
 
     padx : int, optional
-        X-offset of the tooltip from the origin (default is 0)
+        X-offset of the tooltip from the origin (1)
 
     pady : int, optional
-        Y-offset of the tooltip from the origin (default is 0)
+        Y-offset of the tooltip from the origin (1)
 
     ipadx : int, optional
-        Horizontal internal padding (default is 0)
+        Horizontal internal padding (2)
 
     ipady : int, optional
-        Vertical internal padding (default is 0)
+        Vertical internal padding (2)
 
     state : str, optional
-        Tooltip state, "normal" or "disabled" (default is None)
+        Tooltip state, "normal" or "disabled" (None)
 
     bg : str, optional
-        Background color (default is "#ffffee")
+        Background color ("#ffffee")
 
     fg : str, optional
-        Foreground (text) color (default is "black")
+        Foreground (text) color ("black")
 
     font : tuple, optional
-        Font of the text (default is ("TkDefaultFont", 8, "normal"))
+        Font of the text (("TkDefaultFont", 8, "normal"))
 
     borderwidth : int, optional
-        Border width (default is 1)
+        Border width (1)
 
     relief : str, optional
-        Border style (default is "solid")
+        Border style ("solid")
 
     justify : str, optional
-        Text justification (default is "center")
+        Text justification "center")
 
     wraplength : int, optional
-        Maximum line width for text wrapping (default is 0, which disables wrapping)
+        Maximum line width for text wrapping, "value=0" disables wrapping (0)
 
     fade_in : int, optional
-        Fade-in time in milliseconds (default is 125)
+        Fade-in time in milliseconds (125)
 
     fade_out : int, optional
-        Fade-out time in milliseconds (default is 50)
+        Fade-out time in milliseconds (50)
 
     origin : str, optional
-        Origin point of the tooltip, "mouse" or "widget" (default is "mouse")
+        Origin point of the tooltip, "mouse" or "widget" ("mouse")
+
+    anchor : str, optional
+        Position of the tooltip relative to the widget when origin is "widget" ("nw").
+        Valid values are combinations of n, e, s, w (north, east, south, west).
+        For example, "ne" positions at top-right, "sw" at bottom-left, "nesw" centers.
 
 
     Methods
@@ -147,7 +141,8 @@ class TkToolTip:
                 wraplength=WRAPLENGTH,
                 fade_in=FADE_IN,
                 fade_out=FADE_OUT,
-                origin=ORIGIN
+                origin=ORIGIN,
+                anchor=ANCHOR
                 ):
 
         self.widget = widget
@@ -168,6 +163,7 @@ class TkToolTip:
         self.fade_in = fade_in
         self.fade_out = fade_out
         self.origin = origin
+        self.anchor = anchor
 
         self.tip_window = None
         self.widget_id = None
@@ -199,12 +195,39 @@ class TkToolTip:
         self.widget_id = self.widget.after(self.delay, lambda: self._show_tip(event))
 
 
+    def _calculate_position(self, event):
+        """Calculate the position for the tooltip based on origin and anchor settings."""
+        if self.origin == "mouse":
+            return event.x_root + self.padx, event.y_root + self.pady
+        else:  # origin is "widget"
+            widget_width = self.widget.winfo_width()
+            widget_height = self.widget.winfo_height()
+            widget_x = self.widget.winfo_rootx()
+            widget_y = self.widget.winfo_rooty()
+            x, y = widget_x, widget_y
+            is_centered = all(d in self.anchor for d in ['n', 's', 'e', 'w'])
+            if is_centered:
+                x += widget_width // 2
+                y += widget_height // 2
+            else:
+                # Horizontal
+                if "e" in self.anchor:
+                    x += widget_width
+                elif "w" not in self.anchor:
+                    x += widget_width // 2
+                # Vertical
+                if "s" in self.anchor:
+                    y += widget_height
+                elif "n" not in self.anchor:
+                    y += widget_height // 2
+            return x + self.padx, y + self.pady
+
+
     def _show_tip(self, event):
         """Display the tooltip at the specified position."""
         if self.state == "disabled" or not self.text:
             return
-        x, y = (event.x_root + self.padx, event.y_root + self.pady) if self.origin == "mouse" else \
-               (self.widget.winfo_rootx() + self.padx, self.widget.winfo_rooty() + self.pady)
+        x, y = self._calculate_position(event)
         self._create_tip_window(x, y)
 
 
@@ -298,24 +321,25 @@ class TkToolTip:
 
 
     def config(self,
-            text=None,
-            delay=None,
-            padx=None,
-            pady=None,
-            ipadx=None,
-            ipady=None,
-            state=None,
-            bg=None,
-            fg=None,
-            font=None,
-            borderwidth=None,
-            relief=None,
-            justify=None,
-            wraplength=None,
-            fade_in=None,
-            fade_out=None,
-            origin=None
-            ):
+            text: Optional[str] = None,
+            delay: Optional[int] = None,
+            padx: Optional[int] = None,
+            pady: Optional[int] = None,
+            ipadx: Optional[int] = None,
+            ipady: Optional[int] = None,
+            state: Optional[str] = None,
+            bg: Optional[str] = None,
+            fg: Optional[str] = None,
+            font: Optional[Tuple[str, int, str]] = None,
+            borderwidth: Optional[int] = None,
+            relief: Optional[str] = None,
+            justify: Optional[str] = None,
+            wraplength: Optional[int] = None,
+            fade_in: Optional[int] = None,
+            fade_out: Optional[int] = None,
+            origin: Optional[str] = None,
+            anchor: Optional[str] = None
+            ) -> None:
         """Update the tooltip configuration with the given parameters."""
         needs_update = False
         for param, value in locals().items():
@@ -349,65 +373,8 @@ class TkToolTip:
             wraplength=WRAPLENGTH,
             fade_in=FADE_IN,
             fade_out=FADE_OUT,
-            origin=ORIGIN
+            origin=ORIGIN,
+            anchor=ANCHOR
             ):
         """Create a tooltip for the specified widget with the given parameters."""
-        return cls(widget, text, delay, padx, pady, ipadx, ipady, state, bg, fg, font, borderwidth, relief, justify, wraplength, fade_in, fade_out, origin)
-
-
-#endregion
-################################################################################################################################################
-#region -  Changelog
-
-
-'''
-
-
-v1.07 changes:
-
-
-  - New:
-    - Config changes made to a visible tooltip will now be reflected in real-time.
-
-<br>
-
-
-  - Fixed:
-    -
-
-<br>
-
-
-  - Other changes:
-    -
-
-
-'''
-
-
-#endregion
-################################################################################################################################################
-#region -  Todo
-
-
-'''
-
-
-- Todo
-  - Rounded corners for the tooltip, and a more modern look theme.
-  - In addition to the 'origin' parameter, it would be handy to set the 'anchor' for the origin.
-    - The anchor would dictate the starting (x,y) position inside the origin.
-    - For example, the anchor could be considered to already by "ne" (north east), or "top left" for the current logic.
-    - Changing the anchor to "se" would set the tooltip to appear in the bottom right when 'origin=widget'.
-  - When (origin="mouse") allow for a 'follow' parameter to make the tooltip follow the mouse.
-  - Add a 'hide_delay' parameter to keep the tooltip visible for a set amount of time after the mouse leaves the widget.
-  - Stop the tooltip from being created outside the screen bounds.
-  - Add a 'shadow' parameter that adds a soft drop shadow under the tooltip.
-
-
-- Tofix
-  -
-
-  '''
-
-#endregion
+        return cls(widget, text, delay, padx, pady, ipadx, ipady, state, bg, fg, font, borderwidth, relief, justify, wraplength, fade_in, fade_out, origin, anchor)
