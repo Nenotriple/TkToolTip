@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='TkToolTip',
-    version='v1.06',
+    version='v1.07',
     packages=find_packages(),
     install_requires=[],
     author='Nenotriple',
