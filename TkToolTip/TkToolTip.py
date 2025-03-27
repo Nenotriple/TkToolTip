@@ -53,7 +53,7 @@ class TkToolTip:
 
     Parameters
     ----------
-    widget : tkinter.Widget
+    widget : tkinter.Widget, optional
         The widget to attach the tooltip to
 
     text : str, optional
@@ -124,7 +124,7 @@ class TkToolTip:
 
 
     def __init__(self,
-                widget,
+                widget=None,
                 text=TEXT,
                 delay=DELAY,
                 padx=PADX,
@@ -170,7 +170,8 @@ class TkToolTip:
         self.hide_id = None
         self.hide_time = None
 
-        self._bind_widget()
+        if widget:
+            self._bind_widget()
 
 
     def _bind_widget(self):
