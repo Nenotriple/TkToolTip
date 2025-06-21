@@ -1,6 +1,6 @@
 """
 # Name:     TkToolTip
-# Version:  v1.08
+# Version:  v1.09
 # Author:   github.com/Nenotriple
 
 Description:
@@ -122,26 +122,26 @@ class TkToolTip:
     ANCHOR = "nw"
 
     def __init__(self,
-        widget=None,
-        text: str | None = None,
-        delay: int | None = None,
-        padx: int | None = None,
-        pady: int | None = None,
-        ipadx: int | None = None,
-        ipady: int | None = None,
-        state: str | None = None,
-        bg: str | None = None,
-        fg: str | None = None,
-        font: tuple[str, int, str] | None = None,
-        borderwidth: int | None = None,
-        relief: str | None = None,
-        justify: str | None = None,
-        wraplength: int | None = None,
-        fade_in: int | None = None,
-        fade_out: int | None = None,
-        origin: str | None = None,
-        anchor: str | None = None
-    ):
+                widget=None,
+                text=None,
+                delay=None,
+                padx=None,
+                pady=None,
+                ipadx=None,
+                ipady=None,
+                state=None,
+                bg=None,
+                fg=None,
+                font=None,
+                borderwidth=None,
+                relief=None,
+                justify=None,
+                wraplength=None,
+                fade_in=None,
+                fade_out=None,
+                origin=None,
+                anchor=None
+                ):
         # Use class-level defaults if not provided
         self.widget = widget
         self.text = self.TEXT if text is None else text
@@ -163,13 +163,11 @@ class TkToolTip:
         self.origin = self.ORIGIN if origin is None else origin
         self.anchor = self.ANCHOR if anchor is None else anchor
 
-        # Initialize tooltip properties
         self.tip_window = None
         self.widget_id = None
         self.hide_id = None
         self.hide_time = None
 
-        # Create binds if not just initilizing
         if widget:
             self._bind_widget()
 
@@ -178,15 +176,9 @@ class TkToolTip:
         """Setup event bindings for the widget."""
         self.widget.bind('<Motion>', self._schedule_show_tip, add="+")
         self.widget.bind('<Enter>', self._schedule_show_tip, add="+")
-        self.widget.bind('<Leave>', self._leave_event, add="+")
-        self.widget.bind("<Button-1>", self._leave_event, add="+")
-        self.widget.bind('<B1-Motion>', self._leave_event, add="+")
-
-
-    def _leave_event(self, event):
-        """Hide the tooltip and cancel any scheduled events."""
-        self._cancel_tip()
-        self._hide_tip()
+        self.widget.bind('<Leave>', self.hide, add="+")
+        self.widget.bind("<Button-1>", self.hide, add="+")
+        self.widget.bind('<B1-Motion>', self.hide, add="+")
 
 
     def _schedule_show_tip(self, event):
@@ -240,8 +232,7 @@ class TkToolTip:
         self.tip_window.wm_overrideredirect(True)
         self.tip_window.wm_geometry(f"+{x}+{y}")
         self.tip_window.attributes("-alpha", 0.0 if self.fade_in else 1.0)
-        label = Label(
-            self.tip_window,
+        label = Label(self.tip_window,
             text=self.text,
             background=self.bg,
             foreground=self.fg,
@@ -322,26 +313,32 @@ class TkToolTip:
         self.tip_window.attributes("-alpha", current_alpha)
 
 
+    def hide(self, event=None):
+        """Hide the tooltip and cancel any scheduled events."""
+        self._cancel_tip()
+        self._hide_tip()
+
+
     def config(self,
-        text: str | None = None,
-        delay: int | None = None,
-        padx: int | None = None,
-        pady: int | None = None,
-        ipadx: int | None = None,
-        ipady: int | None = None,
-        state: str | None = None,
-        bg: str | None = None,
-        fg: str | None = None,
-        font: tuple[str, int, str] | None = None,
-        borderwidth: int | None = None,
-        relief: str | None = None,
-        justify: str | None = None,
-        wraplength: int | None = None,
-        fade_in: int | None = None,
-        fade_out: int | None = None,
-        origin: str | None = None,
-        anchor: str | None = None
-    ):
+            text: Optional[str] = None,
+            delay: Optional[int] = None,
+            padx: Optional[int] = None,
+            pady: Optional[int] = None,
+            ipadx: Optional[int] = None,
+            ipady: Optional[int] = None,
+            state: Optional[str] = None,
+            bg: Optional[str] = None,
+            fg: Optional[str] = None,
+            font: Optional[Tuple[str, int, str]] = None,
+            borderwidth: Optional[int] = None,
+            relief: Optional[str] = None,
+            justify: Optional[str] = None,
+            wraplength: Optional[int] = None,
+            fade_in: Optional[int] = None,
+            fade_out: Optional[int] = None,
+            origin: Optional[str] = None,
+            anchor: Optional[str] = None
+            ) -> None:
         """Update the tooltip configuration with the given parameters."""
         needs_update = False
         for param, value in locals().items():
@@ -358,26 +355,26 @@ class TkToolTip:
 
     @classmethod
     def create(cls,
-        widget,
-        text: str | None = None,
-        delay: int | None = None,
-        padx: int | None = None,
-        pady: int | None = None,
-        ipadx: int | None = None,
-        ipady: int | None = None,
-        state: str | None = None,
-        bg: str | None = None,
-        fg: str | None = None,
-        font: tuple[str, int, str] | None = None,
-        borderwidth: int | None = None,
-        relief: str | None = None,
-        justify: str | None = None,
-        wraplength: int | None = None,
-        fade_in: int | None = None,
-        fade_out: int | None = None,
-        origin: str | None = None,
-        anchor: str | None = None
-    ):
+            widget,
+            text=None,
+            delay=None,
+            padx=None,
+            pady=None,
+            ipadx=None,
+            ipady=None,
+            state=None,
+            bg=None,
+            fg=None,
+            font=None,
+            borderwidth=None,
+            relief=None,
+            justify=None,
+            wraplength=None,
+            fade_in=None,
+            fade_out=None,
+            origin=None,
+            anchor=None
+            ):
         """Create a tooltip for the specified widget with the given parameters."""
         return cls(
             widget,
