@@ -1,6 +1,6 @@
 """
 # Name:     TkToolTip
-# Version:  v1.09
+# Version:  v1.10
 # Author:   github.com/Nenotriple
 
 Description:
@@ -24,6 +24,9 @@ from typing import Optional, Tuple
 
 # Standard - GUI
 from tkinter import Toplevel, Label
+
+# Local
+from .position_utils import calculate_position
 
 
 class TkToolTip:
@@ -188,39 +191,11 @@ class TkToolTip:
         self.widget_id = self.widget.after(self.delay, lambda: self._show_tip(event))
 
 
-    def _calculate_position(self, event):
-        """Calculate the position for the tooltip based on origin and anchor settings."""
-        if self.origin == "mouse":
-            return event.x_root + self.padx, event.y_root + self.pady
-        else:  # origin is "widget"
-            widget_width = self.widget.winfo_width()
-            widget_height = self.widget.winfo_height()
-            widget_x = self.widget.winfo_rootx()
-            widget_y = self.widget.winfo_rooty()
-            x, y = widget_x, widget_y
-            is_centered = all(d in self.anchor for d in ['n', 's', 'e', 'w'])
-            if is_centered:
-                x += widget_width // 2
-                y += widget_height // 2
-            else:
-                # Horizontal
-                if "e" in self.anchor:
-                    x += widget_width
-                elif "w" not in self.anchor:
-                    x += widget_width // 2
-                # Vertical
-                if "s" in self.anchor:
-                    y += widget_height
-                elif "n" not in self.anchor:
-                    y += widget_height // 2
-            return x + self.padx, y + self.pady
-
-
     def _show_tip(self, event):
         """Display the tooltip at the specified position."""
         if self.state == "disabled" or not self.text:
             return
-        x, y = self._calculate_position(event)
+        x, y = calculate_position(self, event)
         self._create_tip_window(x, y)
 
 
