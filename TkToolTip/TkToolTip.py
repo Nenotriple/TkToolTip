@@ -1,6 +1,6 @@
 """
 # Name:     TkToolTip
-# Version:  v1.10
+# Version:  1.10
 # Author:   github.com/Nenotriple
 
 Description:
