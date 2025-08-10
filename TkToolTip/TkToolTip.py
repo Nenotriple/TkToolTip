@@ -94,6 +94,9 @@ class TkToolTip:
         Valid values are combinations of n, e, s, w (north, east, south, west).
         For example, "ne" positions at top-right, "sw" at bottom-left, "nesw" centers.
 
+    follow_mouse : bool, optional
+        When True, the tooltip follows the mouse while hovering over the widget.
+        This ignores "origin" and "anchor" when active. (False)
 
     Methods
     -------
@@ -123,6 +126,7 @@ class TkToolTip:
     FADE_OUT = 50
     ORIGIN = "mouse"
     ANCHOR = "nw"
+    FOLLOW_MOUSE = False
 
     def __init__(self,
                 widget=None,
@@ -143,7 +147,8 @@ class TkToolTip:
                 fade_in=None,
                 fade_out=None,
                 origin=None,
-                anchor=None
+                anchor=None,
+                follow_mouse=None
                 ):
         # Use class-level defaults if not provided
         self.widget = widget
@@ -165,6 +170,7 @@ class TkToolTip:
         self.fade_out = self.FADE_OUT if fade_out is None else fade_out
         self.origin = self.ORIGIN if origin is None else origin
         self.anchor = self.ANCHOR if anchor is None else anchor
+        self.follow_mouse = self.FOLLOW_MOUSE if follow_mouse is None else follow_mouse
 
         self.tip_window = None
         self.widget_id = None
@@ -186,6 +192,12 @@ class TkToolTip:
 
     def _schedule_show_tip(self, event):
         """Schedule the tooltip to be shown after the specified delay."""
+        # If following mouse and already visible, just move the tip instead of rescheduling
+        if self.follow_mouse and self.tip_window:
+            self._cancel_tip()
+            x, y = self._calculate_follow_position(event)
+            self._move_tip(x, y)
+            return
         if self.widget_id:
             self.widget.after_cancel(self.widget_id)
         self.widget_id = self.widget.after(self.delay, lambda: self._show_tip(event))
@@ -195,7 +207,10 @@ class TkToolTip:
         """Display the tooltip at the specified position."""
         if self.state == "disabled" or not self.text:
             return
-        x, y = calculate_position(self, event)
+        if self.follow_mouse:
+            x, y = self._calculate_follow_position(event)  # ignores origin/anchor
+        else:
+            x, y = calculate_position(self, event)
         self._create_tip_window(x, y)
 
 
@@ -294,6 +309,17 @@ class TkToolTip:
         self._hide_tip()
 
 
+    def _calculate_follow_position(self, event):
+        """Compute position to place the tooltip near the mouse cursor."""
+        return event.x_root + self.padx, event.y_root + self.pady
+
+
+    def _move_tip(self, x, y):
+        """Move the tooltip window to the given coordinates."""
+        if self.tip_window:
+            self.tip_window.wm_geometry(f"+{x}+{y}")
+
+
     def config(self,
             text: Optional[str] = None,
             delay: Optional[int] = None,
@@ -312,7 +338,8 @@ class TkToolTip:
             fade_in: Optional[int] = None,
             fade_out: Optional[int] = None,
             origin: Optional[str] = None,
-            anchor: Optional[str] = None
+            anchor: Optional[str] = None,
+            follow_mouse: Optional[bool] = None
             ) -> None:
         """Update the tooltip configuration with the given parameters."""
         needs_update = False
@@ -326,6 +353,11 @@ class TkToolTip:
 
         if needs_update and self.tip_window:
             self._update_visible_tooltip()
+            # If follow_mouse is active, reposition to the current pointer
+            if self.follow_mouse:
+                x = self.widget.winfo_pointerx() + self.padx
+                y = self.widget.winfo_pointery() + self.pady
+                self._move_tip(x, y)
 
 
     @classmethod
@@ -348,7 +380,8 @@ class TkToolTip:
             fade_in=None,
             fade_out=None,
             origin=None,
-            anchor=None
+            anchor=None,
+            follow_mouse=None
             ):
         """Create a tooltip for the specified widget with the given parameters."""
         return cls(
@@ -370,5 +403,6 @@ class TkToolTip:
             fade_in if fade_in is not None else cls.FADE_IN,
             fade_out if fade_out is not None else cls.FADE_OUT,
             origin if origin is not None else cls.ORIGIN,
-            anchor if anchor is not None else cls.ANCHOR
+            anchor if anchor is not None else cls.ANCHOR,
+            follow_mouse if follow_mouse is not None else cls.FOLLOW_MOUSE
         )
