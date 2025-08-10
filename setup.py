@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='TkToolTip',
-    version='1.10',
+    version='1.11',
     author='Nenotriple',
     url='https://github.com/Nenotriple/TkToolTip',
     description='Add customizable tooltips to any Tkinter widget.',
