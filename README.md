@@ -40,56 +40,23 @@ B) Create and store a tooltip for later configuration:
 
 # 💡 Parameters
 
-`widget` : `tkinter.Widget`
-- The widget to attach the tooltip to
-
-`text` : `str, optional`
-- Tooltip text (default is an empty string)
-
-`delay` : `int, optional`
-- Delay before showing the tooltip in milliseconds (default is `0`)
-
-`padx` : `int, optional`
-- X-offset of the tooltip from the origin (default is `0`)
-
-`pady` : `int, optional`
-- Y-offset of the tooltip from the origin (default is `0`)
-
-`ipadx` : `int, optional`
-- Horizontal internal padding (default is `0`)
-
-`ipady` : `int, optional`
-- Vertical internal padding (default is `0`)
-
-`state` : `str, optional`
-- Tooltip state, "normal" or "disabled" (default is `None`)
-
-`bg` : str, `optional`
-- Background color (default is `"#ffffee"`)
-
-`fg` : str, `optional`
-- Foreground (text) color (default is `"black"`)
-
-`font` : `tuple, optional`
-- Font of the text (default is `("TkDefaultFont", 8, "normal")`)
-
-`borderwidth` : `int, optional`
-- Border width (default is `1`)
-
-`relief` : `str, optional`
-- Border style (default is `"solid"`)
-
-`justify` : `str, optional`
-- Text justification (default is `"center"`)
-
-`wraplength` : `int, optional`
-- Maximum line width for text wrapping (default is `0`, which disables wrapping)
-
-`fade_in` : `int, optional`
-- Fade-in time in milliseconds (default is `125`)
-
-`fade_out` : `int, optional`
-- Fade-out time in milliseconds (default is `50`)
-
-`origin` : `str, optional`
-- Origin point of the tooltip, `"mouse"` or `"widget"` (default is `"mouse"`)
+| Parameter     | Type                | Default                      | Description                                                                 |
+|---------------|---------------------|------------------------------|-----------------------------------------------------------------------------|
+| `widget`      | `tkinter.Widget`    | —                            | The widget to attach the tooltip to                                         |
+| `text`        | `str`               | `""`                         | Tooltip text                                                                |
+| `delay`       | `int`               | `0`                          | Delay before showing the tooltip (ms)                                       |
+| `padx`        | `int`               | `0`                          | X-offset of the tooltip from the origin                                     |
+| `pady`        | `int`               | `0`                          | Y-offset of the tooltip from the origin                                     |
+| `ipadx`       | `int`               | `0`                          | Horizontal internal padding                                                 |
+| `ipady`       | `int`               | `0`                          | Vertical internal padding                                                   |
+| `state`       | `str`               | `None`                       | Tooltip state, `"normal"` or `"disabled"`                                   |
+| `bg`          | `str`               | `"#ffffee"`                | Background color                                                            |
+| `fg`          | `str`               | `"black"`                    | Foreground (text) color                                                     |
+| `font`        | `tuple`             | `("TkDefaultFont", 8, "normal")` | Font of the text                                                        |
+| `borderwidth` | `int`               | `1`                          | Border width                                                                |
+| `relief`      | `str`               | `"solid"`                    | Border style                                                                |
+| `justify`     | `str`               | `"center"`                   | Text justification                                                          |
+| `wraplength`  | `int`               | `0`                          | Max line width for text wrapping (`0` disables wrapping)                    |
+| `fade_in`     | `int`               | `125`                        | Fade-in time (ms)                                                           |
+| `fade_out`    | `int`               | `50`                         | Fade-out time (ms)                                                          |
+| `origin`      | `str`               | `"mouse"`                    | Origin point: `"mouse"` or `"widget"`                                       |
