@@ -37,24 +37,24 @@ tooltip.config(text="Example!")
 
 ## 💡 Parameters
 
-| Parameter     | Type             | Default                         | Description                                                                                                                         |
-| ------------- | ---------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `widget`      | `tkinter.Widget` | —                               | The widget to attach the tooltip to                                                                                                 |
-| `text`        | `str`            | `""`                            | Tooltip text                                                                                                                        |
-| `delay`       | `int`            | `0`                             | Delay before showing the tooltip (ms)                                                                                               |
-| `padx`        | `int`            | `0`                             | X-offset of the tooltip from the origin                                                                                             |
-| `pady`        | `int`            | `0`                             | Y-offset of the tooltip from the origin                                                                                             |
-| `ipadx`       | `int`            | `0`                             | Horizontal internal padding                                                                                                         |
-| `ipady`       | `int`            | `0`                             | Vertical internal padding                                                                                                           |
-| `state`       | `str`            | `None`                          | Tooltip state, `"normal"` or `"disabled"`                                                                                           |
-| `bg`          | `str`            | `"#ffffee"`                   | Background color                                                                                                                    |
-| `fg`          | `str`            | `"black"`                       | Foreground (text) color                                                                                                             |
-| `font`        | `tuple`          | `("TkDefaultFont", 8, "normal")`| Font of the text                                                                                                                    |
-| `borderwidth` | `int`            | `1`                             | Border width                                                                                                                        |
-| `relief`      | `str`            | `"solid"`                       | Border style                                                                                                                        |
-| `justify`     | `str`            | `"center"`                      | Text justification                                                                                                                  |
-| `wraplength`  | `int`            | `0`                             | Max line width for text wrapping (`0` disables wrapping)                                                                            |
-| `fade_in`     | `int`            | `125`                           | Fade-in time (ms)                                                                                                                   |
-| `fade_out`    | `int`            | `50`                            | Fade-out time (ms)                                                                                                                  |
-| `origin`      | `str`            | `"mouse"`                       | Origin point: `"mouse"` or `"widget"`                                                                                               |
-| `anchor`      | `str`            | `"nw"`                          | Relative position to the widget when origin is "widget" (e.g. `"n"`, `"ne"`, `"e"`, `"se"`, `"s"`, `"sw"`, `"w"`, `"nw"`, `"nesw"`) |
+| Parameter     | Type             | Default                         | Description                                                                                                                           |
+| ------------- | ---------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `widget`      | `tkinter.Widget` | —                               | The widget to attach the tooltip to                                                                                                   |
+| `text`        | `str`            | `""`                            | Tooltip text                                                                                                                          |
+| `delay`       | `int`            | `10`                            | Delay before showing the tooltip (ms)                                                                                                 |
+| `padx`        | `int`            | `1`                             | X-offset of the tooltip from the origin                                                                                               |
+| `pady`        | `int`            | `1`                             | Y-offset of the tooltip from the origin                                                                                               |
+| `ipadx`       | `int`            | `2`                             | Horizontal internal padding                                                                                                           |
+| `ipady`       | `int`            | `2`                             | Vertical internal padding                                                                                                             |
+| `state`       | `str`            | `"normal"`                      | Tooltip state, `"normal"` or `"disabled"`                                                                                             |
+| `bg`          | `str`            | `"#ffffee"`                   | Background color                                                                                                                      |
+| `fg`          | `str`            | `"black"`                       | Foreground (text) color                                                                                                               |
+| `font`        | `tuple`          | `("TkDefaultFont", 8, "normal")`| Font of the text                                                                                                                      |
+| `borderwidth` | `int`            | `1`                             | Border width                                                                                                                          |
+| `relief`      | `str`            | `"solid"`                       | Border style                                                                                                                          |
+| `justify`     | `str`            | `"center"`                      | Text justification                                                                                                                    |
+| `wraplength`  | `int`            | `0`                             | Max line width for text wrapping (`0` disables wrapping)                                                                              |
+| `fade_in`     | `int`            | `125`                           | Fade-in time (ms)                                                                                                                     |
+| `fade_out`    | `int`            | `50`                            | Fade-out time (ms)                                                                                                                    |
+| `origin`      | `str`            | `"mouse"`                       | Origin point: `"mouse"` or `"widget"`                                                                                                 |
+| `anchor`      | `str`            | `"nw"`                          | Relative position to the widget when origin is `"widget"` (e.g. `"n"`, `"ne"`, `"e"`, `"se"`, `"s"`, `"sw"`, `"w"`, `"nw"`, `"nesw"`) |

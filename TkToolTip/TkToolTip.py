@@ -57,7 +57,7 @@ class TkToolTip:
         Vertical internal padding (2)
 
     state : str, optional
-        Tooltip state, "normal" or "disabled" (None)
+        Tooltip state, "normal" or "disabled" ("normal")
 
     bg : str, optional
         Background color ("#ffffee")
@@ -75,10 +75,10 @@ class TkToolTip:
         Border style ("solid")
 
     justify : str, optional
-        Text justification "center")
+        Text justification ("center")
 
     wraplength : int, optional
-        Maximum line width for text wrapping, "value=0" disables wrapping (0)
+        Maximum line width for text wrapping (0 disables wrapping)
 
     fade_in : int, optional
         Fade-in time in milliseconds (125)
