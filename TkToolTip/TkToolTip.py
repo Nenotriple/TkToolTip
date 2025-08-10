@@ -18,6 +18,9 @@ B) Create and store a tooltip for later configuration:
 """
 
 
+#region Imports
+
+
 # Standard
 import time
 from typing import Optional, Tuple
@@ -27,6 +30,10 @@ from tkinter import Toplevel, Label
 
 # Local
 from .position_utils import calculate_position
+
+
+#endregion
+#region TkToolTip
 
 
 class TkToolTip:
@@ -86,6 +93,11 @@ class TkToolTip:
     fade_out : int, optional
         Fade-out time in milliseconds (50)
 
+    hide_delay : int, optional
+        Force hiding the tooltip after this many milliseconds (3000). After hiding
+        due to this timeout, the tooltip will not reappear until the mouse leaves
+        the widget and hovers back over it.
+
     origin : str, optional
         Origin point of the tooltip, "mouse" or "widget" ("mouse")
 
@@ -107,6 +119,11 @@ class TkToolTip:
         Update the tooltip configuration.
     """
 
+
+
+    #region Defaults
+
+
     # Class-level default parameters
     TEXT = ""
     DELAY = 10
@@ -124,9 +141,15 @@ class TkToolTip:
     WRAPLENGTH = 0
     FADE_IN = 125
     FADE_OUT = 50
+    HIDE_DELAY = 3000
     ORIGIN = "mouse"
     ANCHOR = "nw"
     FOLLOW_MOUSE = False
+
+
+    #endregion
+    #region Init
+
 
     def __init__(self,
                 widget=None,
@@ -146,6 +169,7 @@ class TkToolTip:
                 wraplength=None,
                 fade_in=None,
                 fade_out=None,
+                hide_delay=None,
                 origin=None,
                 anchor=None,
                 follow_mouse=None
@@ -168,6 +192,7 @@ class TkToolTip:
         self.wraplength = self.WRAPLENGTH if wraplength is None else wraplength
         self.fade_in = self.FADE_IN if fade_in is None else fade_in
         self.fade_out = self.FADE_OUT if fade_out is None else fade_out
+        self.hide_delay = self.HIDE_DELAY if hide_delay is None else hide_delay
         self.origin = self.ORIGIN if origin is None else origin
         self.anchor = self.ANCHOR if anchor is None else anchor
         self.follow_mouse = self.FOLLOW_MOUSE if follow_mouse is None else follow_mouse
@@ -175,189 +200,14 @@ class TkToolTip:
         self.tip_window = None
         self.widget_id = None
         self.hide_id = None
-        self.hide_time = None
+        self._suppress_until_leave = False
 
         if widget:
             self._bind_widget()
 
 
-    def _bind_widget(self):
-        """Setup event bindings for the widget."""
-        self.widget.bind('<Motion>', self._schedule_show_tip, add="+")
-        self.widget.bind('<Enter>', self._schedule_show_tip, add="+")
-        self.widget.bind('<Leave>', self.hide, add="+")
-        self.widget.bind("<Button-1>", self.hide, add="+")
-        self.widget.bind('<B1-Motion>', self.hide, add="+")
-
-
-    def _schedule_show_tip(self, event):
-        """Schedule the tooltip to be shown after the specified delay."""
-        # If following mouse and already visible, just move the tip instead of rescheduling
-        if self.follow_mouse and self.tip_window:
-            self._cancel_tip()
-            x, y = self._calculate_follow_position(event)
-            self._move_tip(x, y)
-            return
-        if self.widget_id:
-            self.widget.after_cancel(self.widget_id)
-        self.widget_id = self.widget.after(self.delay, lambda: self._show_tip(event))
-
-
-    def _show_tip(self, event):
-        """Display the tooltip at the specified position."""
-        if self.state == "disabled" or not self.text:
-            return
-        if self.follow_mouse:
-            x, y = self._calculate_follow_position(event)  # ignores origin/anchor
-        else:
-            x, y = calculate_position(self, event)
-        self._create_tip_window(x, y)
-
-
-    def _create_tip_window(self, x, y):
-        """Create and display the tooltip window."""
-        if self.tip_window:
-            return
-        self.tip_window = Toplevel(self.widget)
-        self.tip_window.wm_overrideredirect(True)
-        self.tip_window.wm_geometry(f"+{x}+{y}")
-        self.tip_window.attributes("-alpha", 0.0 if self.fade_in else 1.0)
-        label = Label(self.tip_window,
-            text=self.text,
-            background=self.bg,
-            foreground=self.fg,
-            font=self.font,
-            relief=self.relief,
-            borderwidth=self.borderwidth,
-            justify=self.justify,
-            wraplength=self.wraplength
-        )
-        label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        if self.fade_in:
-            self._fade(self.fade_in, 0.0, 1.0)
-
-
-    def _hide_tip(self):
-        """Hide or fade out the tooltip window."""
-        if self.tip_window:
-            if self.fade_out:
-                self._fade(self.fade_out, 1.0, 0.0, on_complete=self._remove_tip_window)
-            else:
-                self._remove_tip_window()
-
-
-    def _cancel_tip(self):
-        """Cancel the scheduled display of the tooltip."""
-        if self.widget_id:
-            self.widget.after_cancel(self.widget_id)
-            self.widget_id = None
-
-
-    def _remove_tip_window(self):
-        """Withdraw and remove the tooltip window."""
-        if self.tip_window:
-            self.tip_window.withdraw()
-            self.tip_window = None
-            self.hide_time = time.time()
-
-
-    def _fade(self, duration, start_alpha, end_alpha, on_complete=None):
-        """Fade the tooltip window in or out."""
-        if self.tip_window is None:
-            return
-        steps = max(1, duration // 10)
-        alpha_step = (end_alpha - start_alpha) / steps
-
-        def step(current_step):
-            if self.tip_window is None:
-                return
-            alpha = start_alpha + current_step * alpha_step
-            self.tip_window.attributes("-alpha", alpha)
-            if current_step < steps:
-                self.tip_window.after(10, step, current_step + 1)
-            else:
-                if on_complete:
-                    on_complete()
-        step(0)
-
-
-    def _update_visible_tooltip(self):
-        """Update the tooltip if it's currently visible"""
-        if not self.tip_window:
-            return
-        label = self.tip_window.winfo_children()[0]
-        label.config(
-            text=self.text,
-            background=self.bg,
-            foreground=self.fg,
-            font=self.font,
-            relief=self.relief,
-            borderwidth=self.borderwidth,
-            justify=self.justify,
-            wraplength=self.wraplength
-        )
-        label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
-        self.tip_window.wm_geometry(f"+{x}+{y}")
-        current_alpha = self.tip_window.attributes("-alpha")
-        self.tip_window.attributes("-alpha", current_alpha)
-
-
-    def hide(self, event=None):
-        """Hide the tooltip and cancel any scheduled events."""
-        self._cancel_tip()
-        self._hide_tip()
-
-
-    def _calculate_follow_position(self, event):
-        """Compute position to place the tooltip near the mouse cursor."""
-        return event.x_root + self.padx, event.y_root + self.pady
-
-
-    def _move_tip(self, x, y):
-        """Move the tooltip window to the given coordinates."""
-        if self.tip_window:
-            self.tip_window.wm_geometry(f"+{x}+{y}")
-
-
-    def config(self,
-            text: Optional[str] = None,
-            delay: Optional[int] = None,
-            padx: Optional[int] = None,
-            pady: Optional[int] = None,
-            ipadx: Optional[int] = None,
-            ipady: Optional[int] = None,
-            state: Optional[str] = None,
-            bg: Optional[str] = None,
-            fg: Optional[str] = None,
-            font: Optional[Tuple[str, int, str]] = None,
-            borderwidth: Optional[int] = None,
-            relief: Optional[str] = None,
-            justify: Optional[str] = None,
-            wraplength: Optional[int] = None,
-            fade_in: Optional[int] = None,
-            fade_out: Optional[int] = None,
-            origin: Optional[str] = None,
-            anchor: Optional[str] = None,
-            follow_mouse: Optional[bool] = None
-            ) -> None:
-        """Update the tooltip configuration with the given parameters."""
-        needs_update = False
-        for param, value in locals().items():
-            if value is not None:
-                if param == 'state':
-                    assert value in ["normal", "disabled"], "Invalid state"
-                if param != 'self':
-                    setattr(self, param, value)
-                    needs_update = True
-
-        if needs_update and self.tip_window:
-            self._update_visible_tooltip()
-            # If follow_mouse is active, reposition to the current pointer
-            if self.follow_mouse:
-                x = self.widget.winfo_pointerx() + self.padx
-                y = self.widget.winfo_pointery() + self.pady
-                self._move_tip(x, y)
+    #endregion
+    #region Public API
 
 
     @classmethod
@@ -379,6 +229,7 @@ class TkToolTip:
             wraplength=None,
             fade_in=None,
             fade_out=None,
+            hide_delay=None,
             origin=None,
             anchor=None,
             follow_mouse=None
@@ -402,7 +253,257 @@ class TkToolTip:
             wraplength if wraplength is not None else cls.WRAPLENGTH,
             fade_in if fade_in is not None else cls.FADE_IN,
             fade_out if fade_out is not None else cls.FADE_OUT,
+            hide_delay if hide_delay is not None else cls.HIDE_DELAY,
             origin if origin is not None else cls.ORIGIN,
             anchor if anchor is not None else cls.ANCHOR,
             follow_mouse if follow_mouse is not None else cls.FOLLOW_MOUSE
         )
+
+
+    def config(self,
+            text: Optional[str] = None,
+            delay: Optional[int] = None,
+            padx: Optional[int] = None,
+            pady: Optional[int] = None,
+            ipadx: Optional[int] = None,
+            ipady: Optional[int] = None,
+            state: Optional[str] = None,
+            bg: Optional[str] = None,
+            fg: Optional[str] = None,
+            font: Optional[Tuple[str, int, str]] = None,
+            borderwidth: Optional[int] = None,
+            relief: Optional[str] = None,
+            justify: Optional[str] = None,
+            wraplength: Optional[int] = None,
+            fade_in: Optional[int] = None,
+            fade_out: Optional[int] = None,
+            hide_delay: Optional[int] = None,
+            origin: Optional[str] = None,
+            anchor: Optional[str] = None,
+            follow_mouse: Optional[bool] = None
+            ) -> None:
+        """Update the tooltip configuration with the given parameters."""
+        incoming = {k: v for k, v in locals().items() if k != 'self' and v is not None}
+        for param, value in incoming.items():
+            if param == 'state':
+                assert value in ["normal", "disabled"], "Invalid state"
+            setattr(self, param, value)
+        if self.tip_window:
+            self._update_visible_tooltip()
+            # If follow_mouse is active, reposition to the current pointer
+            if self.follow_mouse:
+                x, y = self._current_follow_position()
+                self._move_tip(x, y)
+            # If hide_delay changed, reschedule auto-hide
+            if 'hide_delay' in incoming:
+                self._schedule_auto_hide()
+
+
+    def hide(self, event=None):
+        """Hide the tooltip and cancel any scheduled events."""
+        self._cancel_tip()
+        self._cancel_auto_hide()
+        self._hide_tip()
+
+
+    #endregion
+    #region Bindings
+
+
+    def _bind_widget(self):
+        """Setup event bindings for the widget."""
+        self.widget.bind('<Motion>', self._schedule_show_tip, add="+")
+        self.widget.bind('<Enter>', self._schedule_show_tip, add="+")
+        self.widget.bind('<Leave>', self._on_leave, add="+")
+        self.widget.bind("<Button-1>", self.hide, add="+")
+        self.widget.bind('<B1-Motion>', self.hide, add="+")
+
+
+    def _on_leave(self, event=None):
+        """Handle mouse leaving the widget: hide and clear suppression."""
+        self._suppress_until_leave = False
+        self.hide(event)
+
+
+    #endregion
+    #region Show/Pos
+
+
+    def _schedule_show_tip(self, event):
+        """Schedule the tooltip to be shown after the specified delay."""
+        # Suppress showing until mouse leaves if auto-hidden recently
+        if self._suppress_until_leave:
+            self._cancel_tip()
+            return
+        # If following mouse and already visible, just move the tip
+        if self.follow_mouse and self.tip_window:
+            self._cancel_tip()
+            x, y = self._calculate_follow_position(event)
+            self._move_tip(x, y)
+            return
+        if self.widget_id:
+            self.widget.after_cancel(self.widget_id)
+        self.widget_id = self.widget.after(self.delay, lambda: self._show_tip(event))
+
+
+    def _show_tip(self, event):
+        """Display the tooltip at the specified position."""
+        if self.state == "disabled" or not self.text or self._suppress_until_leave:
+            return
+        if self.follow_mouse:
+            x, y = self._calculate_follow_position(event)  # ignores origin/anchor
+        else:
+            x, y = calculate_position(self, event)
+        self._create_tip_window(x, y)
+
+
+    def _calculate_follow_position(self, event):
+        """Compute position to place the tooltip near the mouse cursor."""
+        return event.x_root + self.padx, event.y_root + self.pady
+
+
+    def _current_follow_position(self):
+        """Compute follow position based on current pointer location."""
+        return self.widget.winfo_pointerx() + self.padx, self.widget.winfo_pointery() + self.pady
+
+
+    def _move_tip(self, x, y):
+        """Move the tooltip window to the given coordinates."""
+        if self.tip_window:
+            self.tip_window.wm_geometry(f"+{x}+{y}")
+
+
+    #endregion
+    #region Window
+
+
+    def _create_tip_window(self, x, y):
+        """Create and display the tooltip window."""
+        if self.tip_window:
+            return
+        self.tip_window = Toplevel(self.widget)
+        self.tip_window.wm_overrideredirect(True)
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+        self.tip_window.attributes("-alpha", 0.0 if self.fade_in else 1.0)
+        label = Label(
+            self.tip_window,
+            text=self.text,
+            background=self.bg,
+            foreground=self.fg,
+            font=self.font,
+            relief=self.relief,
+            borderwidth=self.borderwidth,
+            justify=self.justify,
+            wraplength=self.wraplength
+        )
+        label.pack(ipadx=self.ipadx, ipady=self.ipady)
+        if self.fade_in:
+            self._fade(self.fade_in, 0.0, 1.0)
+        # Schedule auto-hide after hide_delay
+        self._schedule_auto_hide()
+
+
+    def _remove_tip_window(self):
+        """Withdraw and remove the tooltip window."""
+        if self.tip_window:
+            self.tip_window.withdraw()
+            self.tip_window = None
+
+
+    def _hide_tip(self):
+        """Hide or fade out the tooltip window."""
+        if self.tip_window:
+            if self.fade_out:
+                self._fade(self.fade_out, 1.0, 0.0, on_complete=self._remove_tip_window)
+            else:
+                self._remove_tip_window()
+
+
+    #endregion
+    #region Effects
+
+
+    def _fade(self, duration, start_alpha, end_alpha, on_complete=None):
+        """Fade the tooltip window in or out."""
+        if self.tip_window is None:
+            return
+        steps = max(1, duration // 10)
+        alpha_step = (end_alpha - start_alpha) / steps
+
+        def step(current_step):
+            if self.tip_window is None:
+                return
+            alpha = start_alpha + current_step * alpha_step
+            self.tip_window.attributes("-alpha", alpha)
+            if current_step < steps:
+                self.tip_window.after(10, step, current_step + 1)
+            else:
+                if on_complete:
+                    on_complete()
+
+        step(0)
+
+
+    #endregion
+    #region Auto-hide
+
+
+    def _cancel_tip(self):
+        """Cancel the scheduled display of the tooltip."""
+        if self.widget_id:
+            self.widget.after_cancel(self.widget_id)
+            self.widget_id = None
+
+
+    def _cancel_auto_hide(self):
+        """Cancel the scheduled auto-hide if any."""
+        if self.hide_id:
+            try:
+                self.widget.after_cancel(self.hide_id)
+            except Exception:
+                pass
+            self.hide_id = None
+
+
+    def _schedule_auto_hide(self):
+        """Schedule auto-hide if hide_delay is active."""
+        self._cancel_auto_hide()
+        if self.hide_delay and self.hide_delay > 0:
+            self.hide_id = self.widget.after(self.hide_delay, self._auto_hide)
+
+
+    def _auto_hide(self):
+        """Auto-hide triggered by hide_delay and suppress re-show until leave."""
+        self._suppress_until_leave = True
+        self._cancel_tip()
+        self._hide_tip()
+
+
+    #endregion
+    #region Update
+
+
+    def _update_visible_tooltip(self):
+        """Update the tooltip if it's currently visible."""
+        if not self.tip_window:
+            return
+        label = self.tip_window.winfo_children()[0]
+        label.config(
+            text=self.text,
+            background=self.bg,
+            foreground=self.fg,
+            font=self.font,
+            relief=self.relief,
+            borderwidth=self.borderwidth,
+            justify=self.justify,
+            wraplength=self.wraplength
+        )
+        label.pack(ipadx=self.ipadx, ipady=self.ipady)
+        x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+        current_alpha = self.tip_window.attributes("-alpha")
+        self.tip_window.attributes("-alpha", current_alpha)
+
+
+    #endregion
+#endregion
