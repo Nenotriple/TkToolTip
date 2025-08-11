@@ -20,9 +20,7 @@ B) Create and store a tooltip for later configuration:
 
 #region Imports
 
-
 # Standard
-import time
 from typing import Optional, Tuple
 
 # Standard - GUI
@@ -30,7 +28,6 @@ from tkinter import Toplevel, Label
 
 # Local
 from .position_utils import calculate_position
-
 
 #endregion
 #region TkToolTip
@@ -399,15 +396,16 @@ class TkToolTip:
         label.pack(ipadx=self.ipadx, ipady=self.ipady)
         if self.fade_in:
             self._fade(self.fade_in, 0.0, 1.0)
-        # Schedule auto-hide after hide_delay
         self._schedule_auto_hide()
 
 
     def _remove_tip_window(self):
-        """Withdraw and remove the tooltip window."""
+        """Destroy and remove the tooltip window."""
         if self.tip_window:
-            self.tip_window.withdraw()
-            self.tip_window = None
+            try:
+                self.tip_window.destroy()
+            finally:
+                self.tip_window = None
 
 
     def _hide_tip(self):
@@ -433,11 +431,19 @@ class TkToolTip:
         def step(current_step):
             if self.tip_window is None:
                 return
-            alpha = start_alpha + current_step * alpha_step
-            self.tip_window.attributes("-alpha", alpha)
+            alpha = max(0.0, min(1.0, start_alpha + current_step * alpha_step))
+            try:
+                self.tip_window.attributes("-alpha", alpha)
+            except Exception:
+                pass
             if current_step < steps:
                 self.tip_window.after(10, step, current_step + 1)
             else:
+                try:
+                    if self.tip_window is not None:
+                        self.tip_window.attributes("-alpha", max(0.0, min(1.0, end_alpha)))
+                except Exception:
+                    pass
                 if on_complete:
                     on_complete()
 
