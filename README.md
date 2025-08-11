@@ -51,7 +51,7 @@ tooltip.config(text="Example!")
 | `fg`          | `str`            | `"black"`                       | Foreground (text) color                                                                                                                          |
 | `font`        | `tuple`          | `("TkDefaultFont", 8, "normal")`| Font of the text                                                                                                                                 |
 | `borderwidth` | `int`            | `1`                             | Border width                                                                                                                                     |
-| `relief`      | `str`            | `"solid"`                       | Border relief style (`tkinter.TopLevel`)                                                                                                                |
+| `relief`      | `str`            | `"solid"`                       | Border style (e.g., "solid", "raised", "sunken", "ridge", "groove", "flat")                                |
 | `justify`     | `str`            | `"center"`                      | Text justification                                                                                                                               |
 | `wraplength`  | `int`            | `0`                             | Max line width for text wrapping (`0` disables wrapping)                                                                                         |
 | `fade_in`     | `int`            | `125`                           | Fade-in time (ms)                                                                                                                                |
