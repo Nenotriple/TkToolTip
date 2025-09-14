@@ -87,22 +87,15 @@ class TkToolTip:
 
     def __init__(self, widget=None, **kwargs):
         """Initialize tooltip; kwargs must be among PARAMS."""
-        self.widget = widget
-
-        # Assign defaults overridden by kwargs
-        invalid = [k for k in kwargs.keys() if k not in self.PARAMS]
-        if invalid:
-            raise TypeError(f"Invalid parameter(s): {', '.join(invalid)}")
-        for name in self.PARAMS:
-            setattr(self, name, kwargs.get(name, getattr(self, name.upper())))
-
+        # use unified kwargs processor
+        self._apply_kwargs(kwargs, initialize=True)
         # Instance vars
         self.tip_window: Optional[Toplevel] = None
         self.show_after_id: Optional[int] = None
         self.hide_id: Optional[int] = None
         self._suppress_until_leave: bool = False
-
         # Bind events if widget provided
+        self.widget = widget
         if widget:
             self._bind_widget()
 
@@ -132,13 +125,7 @@ class TkToolTip:
         """Update configuration; only keys in PARAMS are accepted."""
         if not kwargs:
             return
-        invalid = [k for k in kwargs.keys() if k not in self.PARAMS]
-        if invalid:
-            raise TypeError(f"Invalid parameter(s): {', '.join(invalid)}")
-        for param, value in kwargs.items():
-            if param == 'state':
-                assert value in ["normal", "disabled"], "Invalid state"
-            setattr(self, param, value)
+        self._apply_kwargs(kwargs, initialize=False)
         if self.tip_window:
             self._update_visible_tooltip()
             # If follow_mouse is active, reposition to the current pointer
@@ -362,6 +349,33 @@ class TkToolTip:
         self.tip_window.wm_geometry(f"+{x}+{y}")
         current_alpha = self.tip_window.attributes("-alpha")
         self.tip_window.attributes("-alpha", current_alpha)
+
+
+    #endregion
+    #region Internal helpers
+
+
+    def _apply_kwargs(self, kwargs, initialize: bool):
+        """Validate and apply kwargs. If initialize=True, fill unspecified params with defaults."""
+        if not kwargs and not initialize:
+            return
+        # Validate types
+        invalid = [k for k in kwargs if k not in self.PARAMS]
+        if invalid:
+            raise TypeError(f"Invalid parameter(s): {', '.join(invalid)}")
+        if initialize:
+            # set every param either from kwargs or class-level defaults
+            for name in self.PARAMS:
+                value = kwargs.get(name, getattr(self, name.upper()))
+                if name == 'state':
+                    assert value in ["normal", "disabled"], "Invalid state"
+                setattr(self, name, value)
+        # Only set provided params
+        else:
+            for name, value in kwargs.items():
+                if name == 'state':
+                    assert value in ["normal", "disabled"], "Invalid state"
+                setattr(self, name, value)
 
 
     #endregion

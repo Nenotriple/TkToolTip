@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, Literal
 from tkinter import Widget, Toplevel
 
+
 class TkToolTip:
     """
     Attach a Tooltip to any tkinter widget.
@@ -85,6 +86,7 @@ class TkToolTip:
         Hide the tooltip immediately.
     """
 
+
     # Class-level defaults
     TEXT: str
     STATE: Literal["normal", "disabled"]
@@ -107,6 +109,7 @@ class TkToolTip:
     FADE_IN: int
     FADE_OUT: int
     PARAMS: list[str]
+
 
     # Instance attributes (after initialization)
     widget: Optional[Widget]
@@ -134,6 +137,7 @@ class TkToolTip:
     show_after_id: Optional[int]
     hide_id: Optional[int]
 
+
     def __init__(
         self,
         widget: Optional[Widget] = None,
@@ -159,6 +163,7 @@ class TkToolTip:
         fade_in: int = 125,
         fade_out: int = 50
     ) -> None: ...
+
 
     @classmethod
     def bind(
@@ -187,6 +192,7 @@ class TkToolTip:
         fade_out: int = 50
     ) -> TkToolTip: ...
 
+
     def config(
         self,
         *,
@@ -212,5 +218,8 @@ class TkToolTip:
         fade_out: Optional[int] = None
     ) -> None: ...
 
+
     def unbind(self) -> None: ...
+
+
     def hide(self, event=None) -> None: ...
