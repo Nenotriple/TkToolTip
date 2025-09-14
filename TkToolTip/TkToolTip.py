@@ -24,7 +24,7 @@ B) Create and store a tooltip for later configuration:
 from typing import Optional, Tuple
 
 # Standard - GUI
-from tkinter import Toplevel, Label
+from tkinter import Toplevel, Label, Widget
 
 # Local
 from .position_utils import calculate_position
@@ -144,60 +144,78 @@ class TkToolTip:
     FADE_IN = 125
     FADE_OUT = 50
 
+    # list of public parameters
+    PARAMS = [
+        "text", "state", "bg", "fg", "font", "borderwidth", "relief", "justify",
+        "wraplength", "padx", "pady", "ipadx", "ipady", "origin", "anchor",
+        "follow_mouse", "show_delay", "hide_delay", "fade_in", "fade_out"
+    ]
+
+    # For IDEs and type checkers
+    widget: Optional[Widget]
+    text: str
+    state: str
+    bg: str
+    fg: str
+    font: Optional[Tuple[str, int, str]]
+    borderwidth: int
+    relief: str
+    justify: str
+    wraplength: int
+    padx: int
+    pady: int
+    ipadx: int
+    ipady: int
+    origin: str
+    anchor: str
+    follow_mouse: bool
+    show_delay: int
+    hide_delay: int
+    fade_in: int
+    fade_out: int
+
+
     #endregion
     #region Init
 
 
     def __init__(self,
                 widget=None,
-                text=None,
-                state=None,
-                bg=None,
-                fg=None,
-                font=None,
-                borderwidth=None,
-                relief=None,
-                justify=None,
-                wraplength=None,
-                padx=None,
-                pady=None,
-                ipadx=None,
-                ipady=None,
-                origin=None,
-                anchor=None,
-                follow_mouse=None,
-                show_delay=None,
-                hide_delay=None,
-                fade_in=None,
-                fade_out=None
+                text: Optional[str] = None,
+                state: Optional[str] = None,
+                bg: Optional[str] = None,
+                fg: Optional[str] = None,
+                font: Optional[Tuple[str, int, str]] = None,
+                borderwidth: Optional[int] = None,
+                relief: Optional[str] = None,
+                justify: Optional[str] = None,
+                wraplength: Optional[int] = None,
+                padx: Optional[int] = None,
+                pady: Optional[int] = None,
+                ipadx: Optional[int] = None,
+                ipady: Optional[int] = None,
+                origin: Optional[str] = None,
+                anchor: Optional[str] = None,
+                follow_mouse: Optional[bool] = None,
+                show_delay: Optional[int] = None,
+                hide_delay: Optional[int] = None,
+                fade_in: Optional[int] = None,
+                fade_out: Optional[int] = None
                 ):
         # Use class-level defaults if not provided
         self.widget = widget
-        self.text = self.TEXT if text is None else text
-        self.state = self.STATE if state is None else state
-        self.bg = self.BG if bg is None else bg
-        self.fg = self.FG if fg is None else fg
-        self.font = self.FONT if font is None else font
-        self.borderwidth = self.BORDERWIDTH if borderwidth is None else borderwidth
-        self.relief = self.RELIEF if relief is None else relief
-        self.justify = self.JUSTIFY if justify is None else justify
-        self.wraplength = self.WRAPLENGTH if wraplength is None else wraplength
-        self.padx = self.PADX if padx is None else padx
-        self.pady = self.PADY if pady is None else pady
-        self.ipadx = self.IPADX if ipadx is None else ipadx
-        self.ipady = self.IPADY if ipady is None else ipady
-        self.origin = self.ORIGIN if origin is None else origin
-        self.anchor = self.ANCHOR if anchor is None else anchor
-        self.follow_mouse = self.FOLLOW_MOUSE if follow_mouse is None else follow_mouse
-        self.show_delay = self.SHOW_DELAY if show_delay is None else show_delay
-        self.hide_delay = self.HIDE_DELAY if hide_delay is None else hide_delay
-        self.fade_in = self.FADE_IN if fade_in is None else fade_in
-        self.fade_out = self.FADE_OUT if fade_out is None else fade_out
-        # Internal states
-        self.tip_window = None
-        self.widget_id = None
-        self.hide_id = None
-        self._suppress_until_leave = False
+        # assign all public params from locals() or class defaults using PARAMS list
+        local_vars = locals()
+        for name in self.PARAMS:
+            incoming = local_vars.get(name)
+            default = getattr(self, name.upper())
+            setattr(self, name, default if incoming is None else incoming)
+
+        # Instance vars
+        self.tip_window: Optional[Toplevel] = None
+        self.widget_id: Optional[int] = None
+        self.hide_id: Optional[int] = None
+        self._suppress_until_leave: bool = False
 
         if widget:
             self._bind_widget()
@@ -208,53 +226,48 @@ class TkToolTip:
 
 
     @classmethod
-    def create(cls,
+    def bind(cls,
             widget,
-            text=None,
-            state=None,
-            bg=None,
-            fg=None,
-            font=None,
-            borderwidth=None,
-            relief=None,
-            justify=None,
-            wraplength=None,
-            padx=None,
-            pady=None,
-            ipadx=None,
-            ipady=None,
-            origin=None,
-            anchor=None,
-            follow_mouse=None,
-            show_delay=None,
-            hide_delay=None,
-            fade_in=None,
-            fade_out=None
-            ):
+            text: Optional[str] = None,
+            state: Optional[str] = None,
+            bg: Optional[str] = None,
+            fg: Optional[str] = None,
+            font: Optional[Tuple[str, int, str]] = None,
+            borderwidth: Optional[int] = None,
+            relief: Optional[str] = None,
+            justify: Optional[str] = None,
+            wraplength: Optional[int] = None,
+            padx: Optional[int] = None,
+            pady: Optional[int] = None,
+            ipadx: Optional[int] = None,
+            ipady: Optional[int] = None,
+            origin: Optional[str] = None,
+            anchor: Optional[str] = None,
+            follow_mouse: Optional[bool] = None,
+            show_delay: Optional[int] = None,
+            hide_delay: Optional[int] = None,
+            fade_in: Optional[int] = None,
+            fade_out: Optional[int] = None
+            ) -> 'TkToolTip':
         """Create a tooltip for the specified widget with the given parameters."""
-        return cls(
-            widget,
-            text if text is not None else cls.TEXT,
-            state if state is not None else cls.STATE,
-            bg if bg is not None else cls.BG,
-            fg if fg is not None else cls.FG,
-            font if font is not None else cls.FONT,
-            borderwidth if borderwidth is not None else cls.BORDERWIDTH,
-            relief if relief is not None else cls.RELIEF,
-            justify if justify is not None else cls.JUSTIFY,
-            wraplength if wraplength is not None else cls.WRAPLENGTH,
-            padx if padx is not None else cls.PADX,
-            pady if pady is not None else cls.PADY,
-            ipadx if ipadx is not None else cls.IPADX,
-            ipady if ipady is not None else cls.IPADY,
-            origin if origin is not None else cls.ORIGIN,
-            anchor if anchor is not None else cls.ANCHOR,
-            follow_mouse if follow_mouse is not None else cls.FOLLOW_MOUSE,
-            show_delay if show_delay is not None else cls.SHOW_DELAY,
-            hide_delay if hide_delay is not None else cls.HIDE_DELAY,
-            fade_in if fade_in is not None else cls.FADE_IN,
-            fade_out if fade_out is not None else cls.FADE_OUT
-        )
+        # build kwargs from provided args or class defaults using PARAMS list
+        local_vars = locals()
+        kwargs = {}
+        for name in cls.PARAMS:
+            val = local_vars.get(name)
+            kwargs[name] = val if val is not None else getattr(cls, name.upper())
+        return cls(widget, **kwargs)
+
+
+    def unbind(self):
+        """Remove all tooltip-related event bindings from the widget."""
+        if self.widget:
+            self.widget.unbind('<Motion>')
+            self.widget.unbind('<Enter>')
+            self.widget.unbind('<Leave>')
+            self.widget.unbind('<Button-1>')
+            self.widget.unbind('<B1-Motion>')
+        self.hide()
 
 
     def config(self,
