@@ -12,10 +12,11 @@ Add customizable tooltips to any tkinter widget.
 #region Imports
 
 # Standard
-from typing import Optional, Tuple
+from __future__ import annotations
+from typing import Optional, Tuple, Any, Callable, Dict
 
 # Standard - GUI
-from tkinter import Toplevel, Label, Widget
+from tkinter import Toplevel, Label, Widget, Event
 
 # Local
 from .position_utils import calculate_position
@@ -85,7 +86,7 @@ class TkToolTip:
     #region Init
 
 
-    def __init__(self, widget=None, **kwargs):
+    def __init__(self, widget: Optional[Widget] = None, **kwargs: Any) -> None:
         """Initialize tooltip; kwargs must be among PARAMS."""
         # use unified kwargs processor
         self._apply_kwargs(kwargs, initialize=True)
@@ -105,12 +106,12 @@ class TkToolTip:
 
 
     @classmethod
-    def bind(cls, widget, **kwargs) -> 'TkToolTip':
+    def bind(cls, widget: Widget, **kwargs: Any) -> 'TkToolTip':
         """Binds a tooltip for widget; kwargs limited to PARAMS."""
         return cls(widget, **kwargs)
 
 
-    def unbind(self):
+    def unbind(self) -> None:
         """Remove all tooltip-related event bindings from the widget."""
         if self.widget:
             self.widget.unbind('<Motion>')
@@ -121,7 +122,7 @@ class TkToolTip:
         self.hide()
 
 
-    def config(self, **kwargs) -> None:
+    def config(self, **kwargs: Any) -> None:
         """Update configuration; only keys in PARAMS are accepted."""
         if not kwargs:
             return
@@ -137,7 +138,7 @@ class TkToolTip:
                 self._schedule_auto_hide()
 
 
-    def hide(self, event=None):
+    def hide(self, event: Optional[Event] = None) -> None:
         """Hide the tooltip and cancel any scheduled events."""
         self._cancel_tip()
         self._cancel_auto_hide()
@@ -148,7 +149,7 @@ class TkToolTip:
     #region Bindings
 
 
-    def _bind_widget(self):
+    def _bind_widget(self) -> None:
         """Setup event bindings for the widget."""
         self.widget.bind('<Motion>', self._schedule_show_tip, add="+")
         self.widget.bind('<Enter>', self._schedule_show_tip, add="+")
@@ -157,7 +158,7 @@ class TkToolTip:
         self.widget.bind('<B1-Motion>', self.hide, add="+")
 
 
-    def _on_leave(self, event=None):
+    def _on_leave(self, event: Optional[Event] = None) -> None:
         """Handle mouse leaving the widget: hide and clear suppression."""
         self._suppress_until_leave = False
         self.hide(event)
@@ -167,7 +168,7 @@ class TkToolTip:
     #region Show/Pos
 
 
-    def _schedule_show_tip(self, event):
+    def _schedule_show_tip(self, event: Event) -> None:
         """Schedule the tooltip to be shown after the specified delay."""
         # Suppress showing until mouse leaves if auto-hidden recently
         if self._suppress_until_leave:
@@ -184,7 +185,7 @@ class TkToolTip:
         self.show_after_id = self.widget.after(self.show_delay, lambda: self._show_tip(event))
 
 
-    def _show_tip(self, event):
+    def _show_tip(self, event: Event) -> None:
         """Display the tooltip at the specified position."""
         if self.state == "disabled" or not self.text or self._suppress_until_leave:
             return
@@ -195,17 +196,17 @@ class TkToolTip:
         self._create_tip_window(x, y)
 
 
-    def _calculate_follow_position(self, event):
+    def _calculate_follow_position(self, event: Event) -> tuple[int, int]:
         """Compute position to place the tooltip near the mouse cursor."""
         return event.x_root + self.padx, event.y_root + self.pady
 
 
-    def _current_follow_position(self):
+    def _current_follow_position(self) -> tuple[int, int]:
         """Compute follow position based on current pointer location."""
         return self.widget.winfo_pointerx() + self.padx, self.widget.winfo_pointery() + self.pady
 
 
-    def _move_tip(self, x, y):
+    def _move_tip(self, x: int, y: int) -> None:
         """Move the tooltip window to the given coordinates."""
         if self.tip_window:
             self.tip_window.wm_geometry(f"+{x}+{y}")
@@ -215,7 +216,7 @@ class TkToolTip:
     #region Window
 
 
-    def _create_tip_window(self, x, y):
+    def _create_tip_window(self, x: int, y: int) -> None:
         """Create and display the tooltip window."""
         if self.tip_window:
             return
@@ -240,7 +241,7 @@ class TkToolTip:
         self._schedule_auto_hide()
 
 
-    def _remove_tip_window(self):
+    def _remove_tip_window(self) -> None:
         """Destroy and remove the tooltip window."""
         if self.tip_window:
             try:
@@ -249,7 +250,7 @@ class TkToolTip:
                 self.tip_window = None
 
 
-    def _hide_tip(self):
+    def _hide_tip(self) -> None:
         """Hide or fade out the tooltip window."""
         if self.tip_window:
             if self.fade_out:
@@ -262,7 +263,7 @@ class TkToolTip:
     #region Effects
 
 
-    def _fade(self, duration, start_alpha, end_alpha, on_complete=None):
+    def _fade(self, duration: int, start_alpha: float, end_alpha: float, on_complete: Optional[Callable[[], None]] = None) -> None:
         """Fade the tooltip window in or out."""
         if self.tip_window is None:
             return
@@ -295,14 +296,14 @@ class TkToolTip:
     #region Auto-hide
 
 
-    def _cancel_tip(self):
+    def _cancel_tip(self) -> None:
         """Cancel the scheduled display of the tooltip."""
         if self.show_after_id:
             self.widget.after_cancel(self.show_after_id)
             self.show_after_id = None
 
 
-    def _cancel_auto_hide(self):
+    def _cancel_auto_hide(self) -> None:
         """Cancel the scheduled auto-hide if any."""
         if self.hide_id:
             try:
@@ -312,14 +313,14 @@ class TkToolTip:
             self.hide_id = None
 
 
-    def _schedule_auto_hide(self):
+    def _schedule_auto_hide(self) -> None:
         """Schedule auto-hide if hide_delay is active."""
         self._cancel_auto_hide()
         if self.hide_delay and self.hide_delay > 0:
             self.hide_id = self.widget.after(self.hide_delay, self._auto_hide)
 
 
-    def _auto_hide(self):
+    def _auto_hide(self) -> None:
         """Auto-hide triggered by hide_delay and suppress re-show until leave."""
         self._suppress_until_leave = True
         self._cancel_tip()
@@ -330,11 +331,11 @@ class TkToolTip:
     #region Update
 
 
-    def _update_visible_tooltip(self):
+    def _update_visible_tooltip(self) -> None:
         """Update the tooltip if it's currently visible."""
         if not self.tip_window:
             return
-        label = self.tip_window.winfo_children()[0]
+        label: Label = self.tip_window.winfo_children()[0]
         label.config(
             text=self.text,
             background=self.bg,
@@ -355,7 +356,7 @@ class TkToolTip:
     #region Internal helpers
 
 
-    def _apply_kwargs(self, kwargs, initialize: bool):
+    def _apply_kwargs(self, kwargs: Dict[str, Any], initialize: bool) -> None:
         """Validate and apply kwargs. If initialize=True, fill unspecified params with defaults."""
         if not kwargs and not initialize:
             return

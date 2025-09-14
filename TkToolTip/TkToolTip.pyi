@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Tuple, Literal
-from tkinter import Widget, Toplevel
+from tkinter import Widget, Toplevel, Event
 
 
 class TkToolTip:
@@ -222,4 +222,4 @@ class TkToolTip:
     def unbind(self) -> None: ...
 
 
-    def hide(self, event=None) -> None: ...
+    def hide(self, event: Event | None = None) -> None: ...

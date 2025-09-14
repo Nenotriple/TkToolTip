@@ -5,6 +5,8 @@ This module contains functions for calculating and adjusting tooltip positions
 to ensure they stay within screen bounds and don't overlap with the mouse cursor.
 """
 
+from __future__ import annotations
+
 from tkinter import Toplevel, Label, Widget, Event
 
 from typing import TYPE_CHECKING
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
     from . import TkToolTip
 
 
-def calculate_position(tip: 'TkToolTip', event: Event):
+def calculate_position(tip: 'TkToolTip', event: Event) -> tuple[int, int]:
     """Calculate the position for the tooltip based on origin and anchor settings."""
     if tip.origin == "mouse":
         x: int = event.x_root + tip.padx
@@ -42,7 +44,7 @@ def calculate_position(tip: 'TkToolTip', event: Event):
     return adjust_position_for_screen_bounds(tip, x, y, event.x_root, event.y_root, tip.origin)
 
 
-def adjust_position_for_screen_bounds(tip: 'TkToolTip', x: int, y: int, mouse_x: int, mouse_y: int, origin: str):
+def adjust_position_for_screen_bounds(tip: 'TkToolTip', x: int, y: int, mouse_x: int, mouse_y: int, origin: str) -> tuple[int, int]:
     """Adjust tooltip position to keep it within screen bounds and away from mouse."""
     widget: Widget = tip.widget
     screen_width: int = widget.winfo_screenwidth()
@@ -59,7 +61,7 @@ def adjust_position_for_screen_bounds(tip: 'TkToolTip', x: int, y: int, mouse_x:
     return x, y
 
 
-def _get_widget_geometry(widget: Widget):
+def _get_widget_geometry(widget: Widget) -> tuple[int, int, int, int]:
     """Get the geometry of a widget: (x, y, width, height)."""
     widget_width: int = widget.winfo_width()
     widget_height: int = widget.winfo_height()
@@ -70,7 +72,7 @@ def _get_widget_geometry(widget: Widget):
     return x, y, widget_width, widget_height
 
 
-def _estimate_tip_size(tip: 'TkToolTip'):
+def _estimate_tip_size(tip: 'TkToolTip') -> tuple[int, int]:
     """Estimate tooltip size by creating a temporary window."""
     temp_window = Toplevel(tip.widget)
     temp_window.withdraw()
@@ -91,7 +93,7 @@ def _estimate_tip_size(tip: 'TkToolTip'):
     return tip_width, tip_height
 
 
-def _check_tip_overlaps_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, mouse_padding=20):
+def _check_tip_overlaps_mouse(x: int, y: int, tip_width: int, tip_height: int, mouse_x: int, mouse_y: int, mouse_padding: int = 20) -> bool:
     """Check if tooltip overlaps with mouse cursor."""
     return (
         mouse_x >= x - mouse_padding and mouse_x <= x + tip_width + mouse_padding and
@@ -99,7 +101,7 @@ def _check_tip_overlaps_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, mou
     )
 
 
-def _reposition_away_from_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, screen_width, screen_height, mouse_padding=20):
+def _reposition_away_from_mouse(x: int, y: int, tip_width: int, tip_height: int, mouse_x: int, mouse_y: int, screen_width: int, screen_height: int, mouse_padding: int = 20) -> tuple[int, int]:
     """Try to reposition tooltip away from mouse cursor."""
     # Try positioning below the mouse first
     new_y = mouse_y + mouse_padding
@@ -120,7 +122,7 @@ def _reposition_away_from_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, s
     return x, y
 
 
-def _adjust_for_screen_bounds(x, y, tip_width, tip_height, screen_width, screen_height):
+def _adjust_for_screen_bounds(x: int, y: int, tip_width: int, tip_height: int, screen_width: int, screen_height: int) -> tuple[int, int]:
     """Adjust tooltip position for screen bounds."""
     if x + tip_width > screen_width:
         x = screen_width - tip_width - 5
