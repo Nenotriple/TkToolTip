@@ -20,18 +20,18 @@ Add customizable tooltips to any Tkinter widget.
 
 ## 📝 Usage
 
-Tooltips can be created and configured in several ways but they must be associated with a widget.
+Tooltips can be bound and configured in several ways but they must be associated with a widget.
 
-### Create a tooltip directly
+### Bind a tooltip directly
 
 ```python
-Tip.create(widget, text="example")
+Tip.bind(widget, text="example")
 ```
 
-### Create and store a tooltip for later configuration
+### Bind and store a tooltip for later configuration
 
 ```python
-tooltip = Tip.create(widget, text="example")
+tooltip = Tip.bind(widget, text="example")
 tooltip.config(text="Example!")
 ```
 
