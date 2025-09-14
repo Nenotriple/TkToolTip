@@ -111,7 +111,7 @@ class TkToolTip:
 
     Methods
     -------
-    create(cls, widget, **kwargs)
+    bind(cls, widget, **kwargs)
         Create a tooltip for the widget with the given parameters.
 
     config(**kwargs)
@@ -213,7 +213,7 @@ class TkToolTip:
 
         # Instance vars
         self.tip_window: Optional[Toplevel] = None
-        self.widget_id: Optional[int] = None
+        self.show_after_id: Optional[int] = None  # Renamed from widget_id
         self.hide_id: Optional[int] = None
         self._suppress_until_leave: bool = False
 
@@ -351,9 +351,9 @@ class TkToolTip:
             x, y = self._calculate_follow_position(event)
             self._move_tip(x, y)
             return
-        if self.widget_id:
-            self.widget.after_cancel(self.widget_id)
-        self.widget_id = self.widget.after(self.show_delay, lambda: self._show_tip(event))
+        if self.show_after_id:
+            self.widget.after_cancel(self.show_after_id)
+        self.show_after_id = self.widget.after(self.show_delay, lambda: self._show_tip(event))
 
 
     def _show_tip(self, event):
@@ -469,9 +469,9 @@ class TkToolTip:
 
     def _cancel_tip(self):
         """Cancel the scheduled display of the tooltip."""
-        if self.widget_id:
-            self.widget.after_cancel(self.widget_id)
-            self.widget_id = None
+        if self.show_after_id:
+            self.widget.after_cancel(self.show_after_id)
+            self.show_after_id = None
 
 
     def _cancel_auto_hide(self):
@@ -517,7 +517,6 @@ class TkToolTip:
             justify=self.justify,
             wraplength=self.wraplength
         )
-        label.pack(ipadx=self.ipadx, ipady=self.ipady)
         x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
         self.tip_window.wm_geometry(f"+{x}+{y}")
         current_alpha = self.tip_window.attributes("-alpha")
