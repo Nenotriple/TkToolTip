@@ -6,15 +6,6 @@ Version:  1.12
 Description:
 ------------
 Add customizable tooltips to any tkinter widget.
-
-Usage:
-------
-A) Directly create a tooltip:
-     TkToolTip.create(widget, text="example")
-
-B) Create and store a tooltip for later configuration:
-     tooltip = TkToolTip.create(widget, text="example")
-     tooltip.config(text="Example!")
 """
 
 
@@ -29,99 +20,14 @@ from tkinter import Toplevel, Label, Widget
 # Local
 from .position_utils import calculate_position
 
+# NOTE: Full typed call signatures for IDEs are provided in TkToolTip.pyi
+
 #endregion
 #region TkToolTip
 
 
 class TkToolTip:
-    """
-    Attach a Tooltip to any tkinter widget.
-
-    Parameters
-    ----------
-    widget : tkinter.Widget, optional
-        The widget to attach the tooltip to
-
-    text : str, optional
-        Tooltip text ("")
-
-    state : str, optional
-        Tooltip state, "normal" or "disabled" ("normal")
-
-    bg : str, optional
-        Background color ("#ffffee")
-
-    fg : str, optional
-        Foreground (text) color ("black")
-
-    font : tuple, optional
-        Font of the text (("TkDefaultFont", 8, "normal"))
-
-    borderwidth : int, optional
-        Border width (1)
-
-    relief : str, optional
-        Border style ("solid")
-
-    justify : str, optional
-        Text justification ("center")
-
-    wraplength : int, optional
-        Maximum line width for text wrapping (0 disables wrapping)
-
-    padx : int, optional
-        X-offset of the tooltip from the origin (1)
-
-    pady : int, optional
-        Y-offset of the tooltip from the origin (1)
-
-    ipadx : int, optional
-        Horizontal internal padding (2)
-
-    ipady : int, optional
-        Vertical internal padding (2)
-
-    origin : str, optional
-        Origin point of the tooltip, "mouse" or "widget" ("mouse")
-
-    anchor : str, optional
-        Position of the tooltip relative to the widget when origin is "widget" ("nw").
-        Valid values are combinations of n, e, s, w (north, east, south, west). For example,
-        "ne" positions at top-right, "sw" at bottom-left. The special values "center" or
-        "c" explicitly center the tooltip relative to the widget. For backward compatibility,
-        specifying all four directions together ("nesw") is also treated as center.
-
-    follow_mouse : bool, optional
-        When True, the tooltip follows the mouse while hovering over the widget.
-        This ignores "origin" and "anchor" when active. (False)
-
-    show_delay : int, optional
-        Delay before showing the tooltip in milliseconds (10)
-
-    hide_delay : int, optional
-        Force hiding the tooltip after this many milliseconds (3000). After hiding
-        due to this timeout, the tooltip will not reappear until the mouse leaves
-        the widget and hovers back over it.
-
-    fade_in : int, optional
-        Fade-in time in milliseconds (125)
-
-    fade_out : int, optional
-        Fade-out time in milliseconds (50)
-
-    Methods
-    -------
-    bind(cls, widget, **kwargs)
-        Create a tooltip for the widget with the given parameters.
-
-    config(**kwargs)
-        Update the tooltip configuration.
-    """
-
-
     #region Defaults
-
-
     # Class-level default parameters
     TEXT = ""
     STATE = "normal"
@@ -179,44 +85,24 @@ class TkToolTip:
     #region Init
 
 
-    def __init__(self,
-                widget=None,
-                text: Optional[str] = None,
-                state: Optional[str] = None,
-                bg: Optional[str] = None,
-                fg: Optional[str] = None,
-                font: Optional[Tuple[str, int, str]] = None,
-                borderwidth: Optional[int] = None,
-                relief: Optional[str] = None,
-                justify: Optional[str] = None,
-                wraplength: Optional[int] = None,
-                padx: Optional[int] = None,
-                pady: Optional[int] = None,
-                ipadx: Optional[int] = None,
-                ipady: Optional[int] = None,
-                origin: Optional[str] = None,
-                anchor: Optional[str] = None,
-                follow_mouse: Optional[bool] = None,
-                show_delay: Optional[int] = None,
-                hide_delay: Optional[int] = None,
-                fade_in: Optional[int] = None,
-                fade_out: Optional[int] = None
-                ):
-        # Use class-level defaults if not provided
+    def __init__(self, widget=None, **kwargs):
+        """Initialize tooltip; kwargs must be among PARAMS."""
         self.widget = widget
-        # assign all public params from locals() or class defaults using PARAMS list
-        local_vars = locals()
+
+        # Assign defaults overridden by kwargs
+        invalid = [k for k in kwargs.keys() if k not in self.PARAMS]
+        if invalid:
+            raise TypeError(f"Invalid parameter(s): {', '.join(invalid)}")
         for name in self.PARAMS:
-            incoming = local_vars.get(name)
-            default = getattr(self, name.upper())
-            setattr(self, name, default if incoming is None else incoming)
+            setattr(self, name, kwargs.get(name, getattr(self, name.upper())))
 
         # Instance vars
         self.tip_window: Optional[Toplevel] = None
-        self.show_after_id: Optional[int] = None  # Renamed from widget_id
+        self.show_after_id: Optional[int] = None
         self.hide_id: Optional[int] = None
         self._suppress_until_leave: bool = False
 
+        # Bind events if widget provided
         if widget:
             self._bind_widget()
 
@@ -226,36 +112,8 @@ class TkToolTip:
 
 
     @classmethod
-    def bind(cls,
-            widget,
-            text: Optional[str] = None,
-            state: Optional[str] = None,
-            bg: Optional[str] = None,
-            fg: Optional[str] = None,
-            font: Optional[Tuple[str, int, str]] = None,
-            borderwidth: Optional[int] = None,
-            relief: Optional[str] = None,
-            justify: Optional[str] = None,
-            wraplength: Optional[int] = None,
-            padx: Optional[int] = None,
-            pady: Optional[int] = None,
-            ipadx: Optional[int] = None,
-            ipady: Optional[int] = None,
-            origin: Optional[str] = None,
-            anchor: Optional[str] = None,
-            follow_mouse: Optional[bool] = None,
-            show_delay: Optional[int] = None,
-            hide_delay: Optional[int] = None,
-            fade_in: Optional[int] = None,
-            fade_out: Optional[int] = None
-            ) -> 'TkToolTip':
-        """Create a tooltip for the specified widget with the given parameters."""
-        # build kwargs from provided args or class defaults using PARAMS list
-        local_vars = locals()
-        kwargs = {}
-        for name in cls.PARAMS:
-            val = local_vars.get(name)
-            kwargs[name] = val if val is not None else getattr(cls, name.upper())
+    def bind(cls, widget, **kwargs) -> 'TkToolTip':
+        """Binds a tooltip for widget; kwargs limited to PARAMS."""
         return cls(widget, **kwargs)
 
 
@@ -270,31 +128,14 @@ class TkToolTip:
         self.hide()
 
 
-    def config(self,
-            text: Optional[str] = None,
-            state: Optional[str] = None,
-            bg: Optional[str] = None,
-            fg: Optional[str] = None,
-            font: Optional[Tuple[str, int, str]] = None,
-            borderwidth: Optional[int] = None,
-            relief: Optional[str] = None,
-            justify: Optional[str] = None,
-            wraplength: Optional[int] = None,
-            padx: Optional[int] = None,
-            pady: Optional[int] = None,
-            ipadx: Optional[int] = None,
-            ipady: Optional[int] = None,
-            origin: Optional[str] = None,
-            anchor: Optional[str] = None,
-            follow_mouse: Optional[bool] = None,
-            show_delay: Optional[int] = None,
-            hide_delay: Optional[int] = None,
-            fade_in: Optional[int] = None,
-            fade_out: Optional[int] = None
-            ) -> None:
-        """Update the tooltip configuration with the given parameters."""
-        incoming = {k: v for k, v in locals().items() if k != 'self' and v is not None}
-        for param, value in incoming.items():
+    def config(self, **kwargs) -> None:
+        """Update configuration; only keys in PARAMS are accepted."""
+        if not kwargs:
+            return
+        invalid = [k for k in kwargs.keys() if k not in self.PARAMS]
+        if invalid:
+            raise TypeError(f"Invalid parameter(s): {', '.join(invalid)}")
+        for param, value in kwargs.items():
             if param == 'state':
                 assert value in ["normal", "disabled"], "Invalid state"
             setattr(self, param, value)
@@ -305,7 +146,7 @@ class TkToolTip:
                 x, y = self._current_follow_position()
                 self._move_tip(x, y)
             # If hide_delay changed, reschedule auto-hide
-            if 'hide_delay' in incoming:
+            if 'hide_delay' in kwargs:
                 self._schedule_auto_hide()
 
 
