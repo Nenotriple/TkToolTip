@@ -1,7 +1,7 @@
 """
-# Name:     TkToolTip
-# Version:  1.11
-# Author:   github.com/Nenotriple
+Name:     TkToolTip
+Author:   github.com/Nenotriple
+Version:  1.12
 
 Description:
 ------------
@@ -45,21 +45,6 @@ class TkToolTip:
     text : str, optional
         Tooltip text ("")
 
-    delay : int, optional
-        Delay before showing the tooltip in milliseconds (10)
-
-    padx : int, optional
-        X-offset of the tooltip from the origin (1)
-
-    pady : int, optional
-        Y-offset of the tooltip from the origin (1)
-
-    ipadx : int, optional
-        Horizontal internal padding (2)
-
-    ipady : int, optional
-        Vertical internal padding (2)
-
     state : str, optional
         Tooltip state, "normal" or "disabled" ("normal")
 
@@ -84,28 +69,45 @@ class TkToolTip:
     wraplength : int, optional
         Maximum line width for text wrapping (0 disables wrapping)
 
-    fade_in : int, optional
-        Fade-in time in milliseconds (125)
+    padx : int, optional
+        X-offset of the tooltip from the origin (1)
 
-    fade_out : int, optional
-        Fade-out time in milliseconds (50)
+    pady : int, optional
+        Y-offset of the tooltip from the origin (1)
 
-    hide_delay : int, optional
-        Force hiding the tooltip after this many milliseconds (3000). After hiding
-        due to this timeout, the tooltip will not reappear until the mouse leaves
-        the widget and hovers back over it.
+    ipadx : int, optional
+        Horizontal internal padding (2)
+
+    ipady : int, optional
+        Vertical internal padding (2)
 
     origin : str, optional
         Origin point of the tooltip, "mouse" or "widget" ("mouse")
 
     anchor : str, optional
         Position of the tooltip relative to the widget when origin is "widget" ("nw").
-        Valid values are combinations of n, e, s, w (north, east, south, west).
-        For example, "ne" positions at top-right, "sw" at bottom-left, "nesw" centers.
+        Valid values are combinations of n, e, s, w (north, east, south, west). For example,
+        "ne" positions at top-right, "sw" at bottom-left. The special values "center" or
+        "c" explicitly center the tooltip relative to the widget. For backward compatibility,
+        specifying all four directions together ("nesw") is also treated as center.
 
     follow_mouse : bool, optional
         When True, the tooltip follows the mouse while hovering over the widget.
         This ignores "origin" and "anchor" when active. (False)
+
+    show_delay : int, optional
+        Delay before showing the tooltip in milliseconds (10)
+
+    hide_delay : int, optional
+        Force hiding the tooltip after this many milliseconds (3000). After hiding
+        due to this timeout, the tooltip will not reappear until the mouse leaves
+        the widget and hovers back over it.
+
+    fade_in : int, optional
+        Fade-in time in milliseconds (125)
+
+    fade_out : int, optional
+        Fade-out time in milliseconds (50)
 
     Methods
     -------
@@ -117,17 +119,11 @@ class TkToolTip:
     """
 
 
-
     #region Defaults
 
 
     # Class-level default parameters
     TEXT = ""
-    DELAY = 10
-    PADX = 1
-    PADY = 1
-    IPADX = 2
-    IPADY = 2
     STATE = "normal"
     BG = "#ffffee"
     FG = "black"
@@ -136,13 +132,17 @@ class TkToolTip:
     RELIEF = "solid"
     JUSTIFY = "center"
     WRAPLENGTH = 0
-    FADE_IN = 125
-    FADE_OUT = 50
-    HIDE_DELAY = 3000
+    PADX = 1
+    PADY = 1
+    IPADX = 2
+    IPADY = 2
     ORIGIN = "mouse"
     ANCHOR = "nw"
     FOLLOW_MOUSE = False
-
+    SHOW_DELAY = 10
+    HIDE_DELAY = 3000
+    FADE_IN = 125
+    FADE_OUT = 50
 
     #endregion
     #region Init
@@ -151,11 +151,6 @@ class TkToolTip:
     def __init__(self,
                 widget=None,
                 text=None,
-                delay=None,
-                padx=None,
-                pady=None,
-                ipadx=None,
-                ipady=None,
                 state=None,
                 bg=None,
                 fg=None,
@@ -164,21 +159,21 @@ class TkToolTip:
                 relief=None,
                 justify=None,
                 wraplength=None,
-                fade_in=None,
-                fade_out=None,
-                hide_delay=None,
+                padx=None,
+                pady=None,
+                ipadx=None,
+                ipady=None,
                 origin=None,
                 anchor=None,
-                follow_mouse=None
+                follow_mouse=None,
+                show_delay=None,
+                hide_delay=None,
+                fade_in=None,
+                fade_out=None
                 ):
         # Use class-level defaults if not provided
         self.widget = widget
         self.text = self.TEXT if text is None else text
-        self.delay = self.DELAY if delay is None else delay
-        self.padx = self.PADX if padx is None else padx
-        self.pady = self.PADY if pady is None else pady
-        self.ipadx = self.IPADX if ipadx is None else ipadx
-        self.ipady = self.IPADY if ipady is None else ipady
         self.state = self.STATE if state is None else state
         self.bg = self.BG if bg is None else bg
         self.fg = self.FG if fg is None else fg
@@ -187,13 +182,18 @@ class TkToolTip:
         self.relief = self.RELIEF if relief is None else relief
         self.justify = self.JUSTIFY if justify is None else justify
         self.wraplength = self.WRAPLENGTH if wraplength is None else wraplength
-        self.fade_in = self.FADE_IN if fade_in is None else fade_in
-        self.fade_out = self.FADE_OUT if fade_out is None else fade_out
-        self.hide_delay = self.HIDE_DELAY if hide_delay is None else hide_delay
+        self.padx = self.PADX if padx is None else padx
+        self.pady = self.PADY if pady is None else pady
+        self.ipadx = self.IPADX if ipadx is None else ipadx
+        self.ipady = self.IPADY if ipady is None else ipady
         self.origin = self.ORIGIN if origin is None else origin
         self.anchor = self.ANCHOR if anchor is None else anchor
         self.follow_mouse = self.FOLLOW_MOUSE if follow_mouse is None else follow_mouse
-
+        self.show_delay = self.SHOW_DELAY if show_delay is None else show_delay
+        self.hide_delay = self.HIDE_DELAY if hide_delay is None else hide_delay
+        self.fade_in = self.FADE_IN if fade_in is None else fade_in
+        self.fade_out = self.FADE_OUT if fade_out is None else fade_out
+        # Internal states
         self.tip_window = None
         self.widget_id = None
         self.hide_id = None
@@ -211,11 +211,6 @@ class TkToolTip:
     def create(cls,
             widget,
             text=None,
-            delay=None,
-            padx=None,
-            pady=None,
-            ipadx=None,
-            ipady=None,
             state=None,
             bg=None,
             fg=None,
@@ -224,22 +219,22 @@ class TkToolTip:
             relief=None,
             justify=None,
             wraplength=None,
-            fade_in=None,
-            fade_out=None,
-            hide_delay=None,
+            padx=None,
+            pady=None,
+            ipadx=None,
+            ipady=None,
             origin=None,
             anchor=None,
-            follow_mouse=None
+            follow_mouse=None,
+            show_delay=None,
+            hide_delay=None,
+            fade_in=None,
+            fade_out=None
             ):
         """Create a tooltip for the specified widget with the given parameters."""
         return cls(
             widget,
             text if text is not None else cls.TEXT,
-            delay if delay is not None else cls.DELAY,
-            padx if padx is not None else cls.PADX,
-            pady if pady is not None else cls.PADY,
-            ipadx if ipadx is not None else cls.IPADX,
-            ipady if ipady is not None else cls.IPADY,
             state if state is not None else cls.STATE,
             bg if bg is not None else cls.BG,
             fg if fg is not None else cls.FG,
@@ -248,22 +243,22 @@ class TkToolTip:
             relief if relief is not None else cls.RELIEF,
             justify if justify is not None else cls.JUSTIFY,
             wraplength if wraplength is not None else cls.WRAPLENGTH,
-            fade_in if fade_in is not None else cls.FADE_IN,
-            fade_out if fade_out is not None else cls.FADE_OUT,
-            hide_delay if hide_delay is not None else cls.HIDE_DELAY,
+            padx if padx is not None else cls.PADX,
+            pady if pady is not None else cls.PADY,
+            ipadx if ipadx is not None else cls.IPADX,
+            ipady if ipady is not None else cls.IPADY,
             origin if origin is not None else cls.ORIGIN,
             anchor if anchor is not None else cls.ANCHOR,
-            follow_mouse if follow_mouse is not None else cls.FOLLOW_MOUSE
+            follow_mouse if follow_mouse is not None else cls.FOLLOW_MOUSE,
+            show_delay if show_delay is not None else cls.SHOW_DELAY,
+            hide_delay if hide_delay is not None else cls.HIDE_DELAY,
+            fade_in if fade_in is not None else cls.FADE_IN,
+            fade_out if fade_out is not None else cls.FADE_OUT
         )
 
 
     def config(self,
             text: Optional[str] = None,
-            delay: Optional[int] = None,
-            padx: Optional[int] = None,
-            pady: Optional[int] = None,
-            ipadx: Optional[int] = None,
-            ipady: Optional[int] = None,
             state: Optional[str] = None,
             bg: Optional[str] = None,
             fg: Optional[str] = None,
@@ -272,12 +267,17 @@ class TkToolTip:
             relief: Optional[str] = None,
             justify: Optional[str] = None,
             wraplength: Optional[int] = None,
-            fade_in: Optional[int] = None,
-            fade_out: Optional[int] = None,
-            hide_delay: Optional[int] = None,
+            padx: Optional[int] = None,
+            pady: Optional[int] = None,
+            ipadx: Optional[int] = None,
+            ipady: Optional[int] = None,
             origin: Optional[str] = None,
             anchor: Optional[str] = None,
-            follow_mouse: Optional[bool] = None
+            follow_mouse: Optional[bool] = None,
+            show_delay: Optional[int] = None,
+            hide_delay: Optional[int] = None,
+            fade_in: Optional[int] = None,
+            fade_out: Optional[int] = None
             ) -> None:
         """Update the tooltip configuration with the given parameters."""
         incoming = {k: v for k, v in locals().items() if k != 'self' and v is not None}
@@ -340,7 +340,7 @@ class TkToolTip:
             return
         if self.widget_id:
             self.widget.after_cancel(self.widget_id)
-        self.widget_id = self.widget.after(self.delay, lambda: self._show_tip(event))
+        self.widget_id = self.widget.after(self.show_delay, lambda: self._show_tip(event))
 
 
     def _show_tip(self, event):
