@@ -5,7 +5,7 @@ readme = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setup(
     name='TkToolTip',
-    version='1.11',
+    version='1.12',
     author='Nenotriple',
     url='https://github.com/Nenotriple/TkToolTip',
     description='Add customizable tooltips to any Tkinter widget.',

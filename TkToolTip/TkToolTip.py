@@ -1,204 +1,107 @@
 """
-# Name:     TkToolTip
-# Version:  1.11
-# Author:   github.com/Nenotriple
+Name:     TkToolTip
+Author:   github.com/Nenotriple
+Version:  1.12
 
 Description:
 ------------
 Add customizable tooltips to any tkinter widget.
-
-Usage:
-------
-A) Directly create a tooltip:
-     TkToolTip.create(widget, text="example")
-
-B) Create and store a tooltip for later configuration:
-     tooltip = TkToolTip.create(widget, text="example")
-     tooltip.config(text="Example!")
 """
 
 
 #region Imports
 
 # Standard
-from typing import Optional, Tuple
+from __future__ import annotations
+from typing import Optional, Tuple, Any, Callable, Dict, Union
 
 # Standard - GUI
-from tkinter import Toplevel, Label
+from tkinter import Toplevel, Label, Widget, Event
 
 # Local
-from .position_utils import calculate_position
+
+from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
+from .animation_utils import animate_tip_window, SLIDE_ANIM_DISTANCE
+
 
 #endregion
 #region TkToolTip
 
 
 class TkToolTip:
-    """
-    Attach a Tooltip to any tkinter widget.
-
-    Parameters
-    ----------
-    widget : tkinter.Widget, optional
-        The widget to attach the tooltip to
-
-    text : str, optional
-        Tooltip text ("")
-
-    delay : int, optional
-        Delay before showing the tooltip in milliseconds (10)
-
-    padx : int, optional
-        X-offset of the tooltip from the origin (1)
-
-    pady : int, optional
-        Y-offset of the tooltip from the origin (1)
-
-    ipadx : int, optional
-        Horizontal internal padding (2)
-
-    ipady : int, optional
-        Vertical internal padding (2)
-
-    state : str, optional
-        Tooltip state, "normal" or "disabled" ("normal")
-
-    bg : str, optional
-        Background color ("#ffffee")
-
-    fg : str, optional
-        Foreground (text) color ("black")
-
-    font : tuple, optional
-        Font of the text (("TkDefaultFont", 8, "normal"))
-
-    borderwidth : int, optional
-        Border width (1)
-
-    relief : str, optional
-        Border style ("solid")
-
-    justify : str, optional
-        Text justification ("center")
-
-    wraplength : int, optional
-        Maximum line width for text wrapping (0 disables wrapping)
-
-    fade_in : int, optional
-        Fade-in time in milliseconds (125)
-
-    fade_out : int, optional
-        Fade-out time in milliseconds (50)
-
-    hide_delay : int, optional
-        Force hiding the tooltip after this many milliseconds (3000). After hiding
-        due to this timeout, the tooltip will not reappear until the mouse leaves
-        the widget and hovers back over it.
-
-    origin : str, optional
-        Origin point of the tooltip, "mouse" or "widget" ("mouse")
-
-    anchor : str, optional
-        Position of the tooltip relative to the widget when origin is "widget" ("nw").
-        Valid values are combinations of n, e, s, w (north, east, south, west).
-        For example, "ne" positions at top-right, "sw" at bottom-left, "nesw" centers.
-
-    follow_mouse : bool, optional
-        When True, the tooltip follows the mouse while hovering over the widget.
-        This ignores "origin" and "anchor" when active. (False)
-
-    Methods
-    -------
-    create(cls, widget, **kwargs)
-        Create a tooltip for the widget with the given parameters.
-
-    config(**kwargs)
-        Update the tooltip configuration.
-    """
-
-
-
     #region Defaults
-
-
     # Class-level default parameters
     TEXT = ""
-    DELAY = 10
-    PADX = 1
-    PADY = 1
-    IPADX = 2
-    IPADY = 2
     STATE = "normal"
     BG = "#ffffee"
     FG = "black"
     FONT: Optional[Tuple[str, int, str]]  = ("TkDefaultFont", 8, "normal")
     BORDERWIDTH = 1
+    OPACITY = 1.0
     RELIEF = "solid"
     JUSTIFY = "center"
     WRAPLENGTH = 0
-    FADE_IN = 125
-    FADE_OUT = 50
-    HIDE_DELAY = 3000
+    PADX = 1
+    PADY = 1
+    IPADX = 2
+    IPADY = 2
     ORIGIN = "mouse"
     ANCHOR = "nw"
     FOLLOW_MOUSE = False
+    SHOW_DELAY = 100
+    HIDE_DELAY = 5000
+    ANIMATION = "fade"
+    ANIM_IN = 75
+    ANIM_OUT = 50
+
+    # list of public parameters
+    PARAMS = [
+        "text", "state", "bg", "fg", "font", "borderwidth", "opacity", "relief",
+        "justify", "wraplength", "padx", "pady", "ipadx", "ipady", "origin", "anchor",
+        "follow_mouse", "show_delay", "hide_delay", "animation", "anim_in", "anim_out"
+    ]
+
+    # For IDEs and type checkers
+    widget: Optional[Widget]
+    text: Union[str, Callable[[], str]]
+    state: str
+    bg: str
+    fg: str
+    font: Optional[Tuple[str, int, str]]
+    borderwidth: int
+    opacity: float
+    relief: str
+    justify: str
+    wraplength: int
+    padx: int
+    pady: int
+    ipadx: int
+    ipady: int
+    origin: str
+    anchor: str
+    follow_mouse: bool
+    show_delay: int
+    hide_delay: int
+    animation: str
+    anim_in: int
+    anim_out: int
 
 
     #endregion
     #region Init
 
 
-    def __init__(self,
-                widget=None,
-                text=None,
-                delay=None,
-                padx=None,
-                pady=None,
-                ipadx=None,
-                ipady=None,
-                state=None,
-                bg=None,
-                fg=None,
-                font=None,
-                borderwidth=None,
-                relief=None,
-                justify=None,
-                wraplength=None,
-                fade_in=None,
-                fade_out=None,
-                hide_delay=None,
-                origin=None,
-                anchor=None,
-                follow_mouse=None
-                ):
-        # Use class-level defaults if not provided
+    def __init__(self, widget: Optional[Widget] = None, **kwargs: Any) -> None:
+        """Initialize tooltip; kwargs must be among PARAMS."""
+        # use unified kwargs processor
+        self._apply_kwargs(kwargs, initialize=True)
+        # Instance vars
+        self.tip_window: Optional[Toplevel] = None
+        self.show_after_id: Optional[int] = None
+        self.hide_id: Optional[int] = None
+        self._suppress_until_leave: bool = False
+        # Bind events if widget provided
         self.widget = widget
-        self.text = self.TEXT if text is None else text
-        self.delay = self.DELAY if delay is None else delay
-        self.padx = self.PADX if padx is None else padx
-        self.pady = self.PADY if pady is None else pady
-        self.ipadx = self.IPADX if ipadx is None else ipadx
-        self.ipady = self.IPADY if ipady is None else ipady
-        self.state = self.STATE if state is None else state
-        self.bg = self.BG if bg is None else bg
-        self.fg = self.FG if fg is None else fg
-        self.font = self.FONT if font is None else font
-        self.borderwidth = self.BORDERWIDTH if borderwidth is None else borderwidth
-        self.relief = self.RELIEF if relief is None else relief
-        self.justify = self.JUSTIFY if justify is None else justify
-        self.wraplength = self.WRAPLENGTH if wraplength is None else wraplength
-        self.fade_in = self.FADE_IN if fade_in is None else fade_in
-        self.fade_out = self.FADE_OUT if fade_out is None else fade_out
-        self.hide_delay = self.HIDE_DELAY if hide_delay is None else hide_delay
-        self.origin = self.ORIGIN if origin is None else origin
-        self.anchor = self.ANCHOR if anchor is None else anchor
-        self.follow_mouse = self.FOLLOW_MOUSE if follow_mouse is None else follow_mouse
-
-        self.tip_window = None
-        self.widget_id = None
-        self.hide_id = None
-        self._suppress_until_leave = False
-
         if widget:
             self._bind_widget()
 
@@ -208,83 +111,29 @@ class TkToolTip:
 
 
     @classmethod
-    def create(cls,
-            widget,
-            text=None,
-            delay=None,
-            padx=None,
-            pady=None,
-            ipadx=None,
-            ipady=None,
-            state=None,
-            bg=None,
-            fg=None,
-            font=None,
-            borderwidth=None,
-            relief=None,
-            justify=None,
-            wraplength=None,
-            fade_in=None,
-            fade_out=None,
-            hide_delay=None,
-            origin=None,
-            anchor=None,
-            follow_mouse=None
-            ):
-        """Create a tooltip for the specified widget with the given parameters."""
-        return cls(
-            widget,
-            text if text is not None else cls.TEXT,
-            delay if delay is not None else cls.DELAY,
-            padx if padx is not None else cls.PADX,
-            pady if pady is not None else cls.PADY,
-            ipadx if ipadx is not None else cls.IPADX,
-            ipady if ipady is not None else cls.IPADY,
-            state if state is not None else cls.STATE,
-            bg if bg is not None else cls.BG,
-            fg if fg is not None else cls.FG,
-            font if font is not None else cls.FONT,
-            borderwidth if borderwidth is not None else cls.BORDERWIDTH,
-            relief if relief is not None else cls.RELIEF,
-            justify if justify is not None else cls.JUSTIFY,
-            wraplength if wraplength is not None else cls.WRAPLENGTH,
-            fade_in if fade_in is not None else cls.FADE_IN,
-            fade_out if fade_out is not None else cls.FADE_OUT,
-            hide_delay if hide_delay is not None else cls.HIDE_DELAY,
-            origin if origin is not None else cls.ORIGIN,
-            anchor if anchor is not None else cls.ANCHOR,
-            follow_mouse if follow_mouse is not None else cls.FOLLOW_MOUSE
-        )
+    def bind(cls, widget: Widget, **kwargs: Any) -> 'TkToolTip':
+        """Binds a tooltip for widget; kwargs limited to PARAMS."""
+        return cls(widget, **kwargs)
 
 
-    def config(self,
-            text: Optional[str] = None,
-            delay: Optional[int] = None,
-            padx: Optional[int] = None,
-            pady: Optional[int] = None,
-            ipadx: Optional[int] = None,
-            ipady: Optional[int] = None,
-            state: Optional[str] = None,
-            bg: Optional[str] = None,
-            fg: Optional[str] = None,
-            font: Optional[Tuple[str, int, str]] = None,
-            borderwidth: Optional[int] = None,
-            relief: Optional[str] = None,
-            justify: Optional[str] = None,
-            wraplength: Optional[int] = None,
-            fade_in: Optional[int] = None,
-            fade_out: Optional[int] = None,
-            hide_delay: Optional[int] = None,
-            origin: Optional[str] = None,
-            anchor: Optional[str] = None,
-            follow_mouse: Optional[bool] = None
-            ) -> None:
-        """Update the tooltip configuration with the given parameters."""
-        incoming = {k: v for k, v in locals().items() if k != 'self' and v is not None}
-        for param, value in incoming.items():
-            if param == 'state':
-                assert value in ["normal", "disabled"], "Invalid state"
-            setattr(self, param, value)
+    def unbind(self) -> None:
+        """Remove all tooltip-related event bindings from the widget."""
+        if self.widget:
+            self.widget.unbind('<Motion>')
+            self.widget.unbind('<Enter>')
+            self.widget.unbind('<Leave>')
+            self.widget.unbind('<Button-1>')
+            self.widget.unbind('<B1-Motion>')
+            self.widget.unbind('<ButtonPress>')
+            self.widget.unbind('<ButtonRelease>')
+        self.hide()
+
+
+    def config(self, **kwargs: Any) -> None:
+        """Update configuration; only keys in PARAMS are accepted."""
+        if not kwargs:
+            return
+        self._apply_kwargs(kwargs, initialize=False)
         if self.tip_window:
             self._update_visible_tooltip()
             # If follow_mouse is active, reposition to the current pointer
@@ -292,11 +141,11 @@ class TkToolTip:
                 x, y = self._current_follow_position()
                 self._move_tip(x, y)
             # If hide_delay changed, reschedule auto-hide
-            if 'hide_delay' in incoming:
+            if 'hide_delay' in kwargs:
                 self._schedule_auto_hide()
 
 
-    def hide(self, event=None):
+    def hide(self, event: Optional[Event] = None) -> None:
         """Hide the tooltip and cancel any scheduled events."""
         self._cancel_tip()
         self._cancel_auto_hide()
@@ -307,16 +156,18 @@ class TkToolTip:
     #region Bindings
 
 
-    def _bind_widget(self):
+    def _bind_widget(self) -> None:
         """Setup event bindings for the widget."""
         self.widget.bind('<Motion>', self._schedule_show_tip, add="+")
         self.widget.bind('<Enter>', self._schedule_show_tip, add="+")
         self.widget.bind('<Leave>', self._on_leave, add="+")
         self.widget.bind("<Button-1>", self.hide, add="+")
         self.widget.bind('<B1-Motion>', self.hide, add="+")
+        self.widget.bind('<ButtonPress>', self.hide, add="+")
+        self.widget.bind('<ButtonRelease>', self.hide, add="+")
 
 
-    def _on_leave(self, event=None):
+    def _on_leave(self, event: Optional[Event] = None) -> None:
         """Handle mouse leaving the widget: hide and clear suppression."""
         self._suppress_until_leave = False
         self.hide(event)
@@ -326,7 +177,7 @@ class TkToolTip:
     #region Show/Pos
 
 
-    def _schedule_show_tip(self, event):
+    def _schedule_show_tip(self, event: Event) -> None:
         """Schedule the tooltip to be shown after the specified delay."""
         # Suppress showing until mouse leaves if auto-hidden recently
         if self._suppress_until_leave:
@@ -338,35 +189,39 @@ class TkToolTip:
             x, y = self._calculate_follow_position(event)
             self._move_tip(x, y)
             return
-        if self.widget_id:
-            self.widget.after_cancel(self.widget_id)
-        self.widget_id = self.widget.after(self.delay, lambda: self._show_tip(event))
+        if self.show_after_id:
+            self.widget.after_cancel(self.show_after_id)
+        self.show_after_id = self.widget.after(self.show_delay, lambda: self._show_tip(event))
 
 
-    def _show_tip(self, event):
+    def _show_tip(self, event: Event) -> None:
         """Display the tooltip at the specified position."""
-        if self.state == "disabled" or not self.text or self._suppress_until_leave:
+        if self.state == "disabled" or not self._get_text() or self._suppress_until_leave:
             return
         if self.follow_mouse:
             x, y = self._calculate_follow_position(event)  # ignores origin/anchor
+            x, y = adjust_position_for_screen_bounds(self, x, y, event.x_root, event.y_root, "mouse")
         else:
-            x, y = calculate_position(self, event)
+            x, y = calculate_tooltip_position(self, event)
         self._create_tip_window(x, y)
 
 
-    def _calculate_follow_position(self, event):
+    def _calculate_follow_position(self, event: Event) -> tuple[int, int]:
         """Compute position to place the tooltip near the mouse cursor."""
         return event.x_root + self.padx, event.y_root + self.pady
 
 
-    def _current_follow_position(self):
+    def _current_follow_position(self) -> tuple[int, int]:
         """Compute follow position based on current pointer location."""
         return self.widget.winfo_pointerx() + self.padx, self.widget.winfo_pointery() + self.pady
 
 
-    def _move_tip(self, x, y):
+    def _move_tip(self, x: int, y: int) -> None:
         """Move the tooltip window to the given coordinates."""
         if self.tip_window:
+            mouse_x = self.widget.winfo_pointerx()
+            mouse_y = self.widget.winfo_pointery()
+            x, y = adjust_position_for_screen_bounds(self, x, y, mouse_x, mouse_y, self.origin)
             self.tip_window.wm_geometry(f"+{x}+{y}")
 
 
@@ -374,32 +229,21 @@ class TkToolTip:
     #region Window
 
 
-    def _create_tip_window(self, x, y):
+    def _create_tip_window(self, x: int, y: int) -> None:
         """Create and display the tooltip window."""
         if self.tip_window:
             return
         self.tip_window = Toplevel(self.widget)
         self.tip_window.wm_overrideredirect(True)
         self.tip_window.wm_geometry(f"+{x}+{y}")
-        self.tip_window.attributes("-alpha", 0.0 if self.fade_in else 1.0)
-        label = Label(
-            self.tip_window,
-            text=self.text,
-            background=self.bg,
-            foreground=self.fg,
-            font=self.font,
-            relief=self.relief,
-            borderwidth=self.borderwidth,
-            justify=self.justify,
-            wraplength=self.wraplength
-        )
+        label = Label(self.tip_window)
         label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        if self.fade_in:
-            self._fade(self.fade_in, 0.0, 1.0)
+        self.update_tip_label(label)
+        self._animate(show=True)
         self._schedule_auto_hide()
 
 
-    def _remove_tip_window(self):
+    def _remove_tip_window(self) -> None:
         """Destroy and remove the tooltip window."""
         if self.tip_window:
             try:
@@ -408,60 +252,37 @@ class TkToolTip:
                 self.tip_window = None
 
 
-    def _hide_tip(self):
-        """Hide or fade out the tooltip window."""
+    def _hide_tip(self) -> None:
+        """Hide and/or animate hiding the tooltip window."""
         if self.tip_window:
-            if self.fade_out:
-                self._fade(self.fade_out, 1.0, 0.0, on_complete=self._remove_tip_window)
-            else:
-                self._remove_tip_window()
+            self._animate(show=False)
 
 
-    #endregion
-    #region Effects
-
-
-    def _fade(self, duration, start_alpha, end_alpha, on_complete=None):
-        """Fade the tooltip window in or out."""
-        if self.tip_window is None:
-            return
-        steps = max(1, duration // 10)
-        alpha_step = (end_alpha - start_alpha) / steps
-
-        def step(current_step):
-            if self.tip_window is None:
-                return
-            alpha = max(0.0, min(1.0, start_alpha + current_step * alpha_step))
-            try:
-                self.tip_window.attributes("-alpha", alpha)
-            except Exception:
-                pass
-            if current_step < steps:
-                self.tip_window.after(10, step, current_step + 1)
-            else:
-                try:
-                    if self.tip_window is not None:
-                        self.tip_window.attributes("-alpha", max(0.0, min(1.0, end_alpha)))
-                except Exception:
-                    pass
-                if on_complete:
-                    on_complete()
-
-        step(0)
+    def _animate(self, show: bool) -> None:
+        """Unified animation handler for fade and slide."""
+        animate_tip_window(
+            tip_window=self.tip_window,
+            animation=getattr(self, 'animation', 'fade') or 'none',
+            show=show,
+            opacity=self.opacity,
+            anim_in=self.anim_in,
+            anim_out=self.anim_out,
+            remove_tip_window=self._remove_tip_window
+        )
 
 
     #endregion
     #region Auto-hide
 
 
-    def _cancel_tip(self):
+    def _cancel_tip(self) -> None:
         """Cancel the scheduled display of the tooltip."""
-        if self.widget_id:
-            self.widget.after_cancel(self.widget_id)
-            self.widget_id = None
+        if self.show_after_id:
+            self.widget.after_cancel(self.show_after_id)
+            self.show_after_id = None
 
 
-    def _cancel_auto_hide(self):
+    def _cancel_auto_hide(self) -> None:
         """Cancel the scheduled auto-hide if any."""
         if self.hide_id:
             try:
@@ -471,14 +292,14 @@ class TkToolTip:
             self.hide_id = None
 
 
-    def _schedule_auto_hide(self):
+    def _schedule_auto_hide(self) -> None:
         """Schedule auto-hide if hide_delay is active."""
         self._cancel_auto_hide()
         if self.hide_delay and self.hide_delay > 0:
             self.hide_id = self.widget.after(self.hide_delay, self._auto_hide)
 
 
-    def _auto_hide(self):
+    def _auto_hide(self) -> None:
         """Auto-hide triggered by hide_delay and suppress re-show until leave."""
         self._suppress_until_leave = True
         self._cancel_tip()
@@ -489,13 +310,20 @@ class TkToolTip:
     #region Update
 
 
-    def _update_visible_tooltip(self):
+    def _update_visible_tooltip(self) -> None:
         """Update the tooltip if it's currently visible."""
         if not self.tip_window:
             return
-        label = self.tip_window.winfo_children()[0]
+        label: Label = self.tip_window.winfo_children()[0]
+        self.update_tip_label(label)
+        x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+        self.tip_window.attributes("-alpha", self.opacity)
+
+
+    def update_tip_label(self, label: Label) -> None:
         label.config(
-            text=self.text,
+            text=self._get_text(),
             background=self.bg,
             foreground=self.fg,
             font=self.font,
@@ -504,11 +332,47 @@ class TkToolTip:
             justify=self.justify,
             wraplength=self.wraplength
         )
-        label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
-        self.tip_window.wm_geometry(f"+{x}+{y}")
-        current_alpha = self.tip_window.attributes("-alpha")
-        self.tip_window.attributes("-alpha", current_alpha)
+
+
+    def _get_text(self) -> str:
+        """Return the current tooltip text, calling if it's a function."""
+        if callable(self.text):
+            try:
+                return self.text()
+            except Exception:
+                return ""
+        return self.text
+
+
+    #endregion
+    #region Internal helpers
+
+
+    def _apply_kwargs(self, kwargs: Dict[str, Any], initialize: bool) -> None:
+        """Validate and apply kwargs. If initialize=True, fill unspecified params with defaults."""
+        if not kwargs and not initialize:
+            return
+        # Validate types
+        invalid = [k for k in kwargs if k not in self.PARAMS]
+        if invalid:
+            raise TypeError(f"Invalid parameter(s): {', '.join(invalid)}")
+        if initialize:
+            # set every param either from kwargs or class-level defaults
+            for name in self.PARAMS:
+                value = kwargs.get(name, getattr(self, name.upper()))
+                if name == 'state':
+                    assert value in ["normal", "disabled"], "Invalid state"
+                if name == 'opacity':
+                    assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
+                setattr(self, name, value)
+        # Only set provided params
+        else:
+            for name, value in kwargs.items():
+                if name == 'state':
+                    assert value in ["normal", "disabled"], "Invalid state"
+                if name == 'opacity':
+                    assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
+                setattr(self, name, value)
 
 
     #endregion
