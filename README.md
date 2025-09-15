@@ -9,7 +9,7 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
 1. Install from the repository:
 
    ```bash
-   pip install git+https://github.com/Nenotriple/TkToolTip.git
+   pip install git+https://github.com/Nenotriple/TkToolTip.git@main
    ```
 
 2. Import in your Python script:
@@ -19,9 +19,9 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
    ```
 
 > [!WARNING]
-> v1.12+ introduces breaking changes to the API.
+> `v1.12+` introduces breaking changes to the API.
 >
-> Use v1.11 for legacy support: `a6136b4b74aa40a0aff5b9e9ea0441349fc5eb7d`.
+> For legacy support use `git+https://github.com/Nenotriple/TkToolTip.git@v1.11`
 
 ## Usage
 
