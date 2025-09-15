@@ -4,7 +4,6 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
 
 ![Python 3.10+](https://img.shields.io/badge/git-Python_3.10%2B-green)
 
-
 ## Install
 
 1. Install from the repository:
@@ -18,6 +17,11 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
    ```python
    from TkToolTip import TkToolTip as Tip
    ```
+
+> [!WARNING]
+> v1.12+ introduces breaking changes to the API.
+>
+> Use v1.11 for legacy support: `a6136b4b74aa40a0aff5b9e9ea0441349fc5eb7d`.
 
 ## Usage
 
