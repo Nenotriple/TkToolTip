@@ -242,3 +242,6 @@ class TkToolTip:
 
 
     def hide(self, event: Event | None = None) -> None: ...
+
+
+    def _get_text(self) -> str: ...
