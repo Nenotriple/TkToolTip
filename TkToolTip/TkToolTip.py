@@ -20,10 +20,8 @@ from tkinter import Toplevel, Label, Widget, Event
 
 # Local
 
-from .position_utils import calculate_position
+from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
 from .animation_utils import animate_tip_window, SLIDE_ANIM_DISTANCE
-
-# NOTE: Full typed call signatures for IDEs are provided in TkToolTip.pyi
 
 
 #endregion
@@ -202,8 +200,9 @@ class TkToolTip:
             return
         if self.follow_mouse:
             x, y = self._calculate_follow_position(event)  # ignores origin/anchor
+            x, y = adjust_position_for_screen_bounds(self, x, y, event.x_root, event.y_root, "mouse")
         else:
-            x, y = calculate_position(self, event)
+            x, y = calculate_tooltip_position(self, event)
         self._create_tip_window(x, y)
 
 
@@ -220,6 +219,9 @@ class TkToolTip:
     def _move_tip(self, x: int, y: int) -> None:
         """Move the tooltip window to the given coordinates."""
         if self.tip_window:
+            mouse_x = self.widget.winfo_pointerx()
+            mouse_y = self.widget.winfo_pointery()
+            x, y = adjust_position_for_screen_bounds(self, x, y, mouse_x, mouse_y, self.origin)
             self.tip_window.wm_geometry(f"+{x}+{y}")
 
 

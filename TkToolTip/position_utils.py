@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from . import TkToolTip
 
 
-def calculate_position(tip: 'TkToolTip', event: Event) -> tuple[int, int]:
+def calculate_tooltip_position(tip: 'TkToolTip', event: Event) -> tuple[int, int]:
     """Calculate the position for the tooltip based on origin and anchor settings."""
     if tip.origin == "mouse":
         x: int = event.x_root + tip.padx
@@ -63,6 +63,7 @@ def adjust_position_for_screen_bounds(tip: 'TkToolTip', x: int, y: int, mouse_x:
 
 def _get_widget_geometry(widget: Widget) -> tuple[int, int, int, int]:
     """Get the geometry of a widget: (x, y, width, height)."""
+    widget.update_idletasks()
     widget_width: int = widget.winfo_width()
     widget_height: int = widget.winfo_height()
     widget_x: int = widget.winfo_rootx()
