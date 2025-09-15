@@ -230,6 +230,7 @@ def create_configuration_vars():
         'follow_mouse': tk.BooleanVar(value=False),
         'borderwidth': tk.IntVar(value=1),
         'relief': tk.StringVar(value='solid'),
+        'opacity': tk.DoubleVar(value=1.0),
         'show_delay': tk.IntVar(value=500),
         'hide_delay': tk.IntVar(value=3000),
         'fade_in': tk.IntVar(value=150),
@@ -274,6 +275,7 @@ def create_border_group(parent, vars):
     group = create_config_group(parent, 'Border', 1, 1)
     create_labeled_spinbox(group, 'Border Width:', vars['borderwidth'], 0, 8)
     create_labeled_combobox(group, 'Relief:', vars['relief'], ['solid', 'raised', 'sunken', 'ridge', 'groove', 'flat'], readonly=True)
+    create_labeled_spinbox(group, 'Opacity:', vars['opacity'], 0.0, 1.0, 0.01)
 
 
 def create_timing_group(parent, vars):
@@ -313,34 +315,39 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
                 show_delay=vars['show_delay'].get(),
                 hide_delay=vars['hide_delay'].get(),
                 fade_in=vars['fade_in'].get(),
-                fade_out=vars['fade_out'].get()
+                fade_out=vars['fade_out'].get(),
+                opacity=vars['opacity'].get()
             )
         except tk.TclError:
-            pass
+            return
         # Update arguments display to easily see and copy the current config string.
         if args_var is not None:
-            args_dict = {
-                "text": vars['text'].get(),
-                "state": vars['state'].get(),
-                "bg": vars['bg'].get(),
-                "fg": vars['fg'].get(),
-                "font": font_tuple,
-                "borderwidth": vars['borderwidth'].get(),
-                "relief": vars['relief'].get(),
-                "justify": vars['justify'].get(),
-                "wraplength": vars['wraplength'].get(),
-                "padx": vars['padx'].get(),
-                "pady": vars['pady'].get(),
-                "ipadx": vars['ipadx'].get(),
-                "ipady": vars['ipady'].get(),
-                "origin": vars['origin'].get(),
-                "anchor": vars['anchor'].get(),
-                "follow_mouse": vars['follow_mouse'].get(),
-                "show_delay": vars['show_delay'].get(),
-                "hide_delay": vars['hide_delay'].get(),
-                "fade_in": vars['fade_in'].get(),
-                "fade_out": vars['fade_out'].get()
-            }
+            try:
+                args_dict = {
+                    "text": vars['text'].get(),
+                    "state": vars['state'].get(),
+                    "bg": vars['bg'].get(),
+                    "fg": vars['fg'].get(),
+                    "font": font_tuple,
+                    "borderwidth": vars['borderwidth'].get(),
+                    "relief": vars['relief'].get(),
+                    "justify": vars['justify'].get(),
+                    "wraplength": vars['wraplength'].get(),
+                    "padx": vars['padx'].get(),
+                    "pady": vars['pady'].get(),
+                    "ipadx": vars['ipadx'].get(),
+                    "ipady": vars['ipady'].get(),
+                    "origin": vars['origin'].get(),
+                    "anchor": vars['anchor'].get(),
+                    "follow_mouse": vars['follow_mouse'].get(),
+                    "show_delay": vars['show_delay'].get(),
+                    "hide_delay": vars['hide_delay'].get(),
+                    "fade_in": vars['fade_in'].get(),
+                    "fade_out": vars['fade_out'].get(),
+                    "opacity": vars['opacity'].get()
+                }
+            except tk.TclError:
+                return
             # Format as a single-line string for display and learning.
             args_str = ', '.join(f"{k}={repr(v)}" for k, v in args_dict.items())
             args_var.set(args_str)

@@ -30,6 +30,9 @@ class TkToolTip:
     borderwidth : int, optional
         Border width (1)
 
+    opacity : float, optional
+        Opacity of the tooltip (1.0)
+
     relief : str, optional
         Border style ("solid")
 
@@ -94,6 +97,7 @@ class TkToolTip:
     FG: str
     FONT: Optional[Tuple[str, int, str]]
     BORDERWIDTH: int
+    OPACITY: float
     RELIEF: str
     JUSTIFY: str
     WRAPLENGTH: int
@@ -119,6 +123,7 @@ class TkToolTip:
     fg: str
     font: Optional[Tuple[str, int, str]]
     borderwidth: int
+    opacity: float
     relief: str
     justify: str
     wraplength: int
@@ -148,6 +153,7 @@ class TkToolTip:
         fg: str = "black",
         font: Optional[Tuple[str, int, str]] = ("TkDefaultFont", 8, "normal"),
         borderwidth: int = 1,
+        opacity: float = 1.0,
         relief: str = "solid",
         justify: str = "center",
         wraplength: int = 0,
@@ -176,6 +182,7 @@ class TkToolTip:
         fg: str = "black",
         font: Optional[Tuple[str, int, str]] = ("TkDefaultFont", 8, "normal"),
         borderwidth: int = 1,
+        opacity: float = 1.0,
         relief: str = "solid",
         justify: str = "center",
         wraplength: int = 0,
@@ -202,6 +209,7 @@ class TkToolTip:
         fg: Optional[str] = None,
         font: Optional[Tuple[str, int, str]] = None,
         borderwidth: Optional[int] = None,
+        opacity: Optional[float] = None,
         relief: Optional[str] = None,
         justify: Optional[str] = None,
         wraplength: Optional[int] = None,

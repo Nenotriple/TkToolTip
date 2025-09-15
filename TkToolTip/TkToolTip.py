@@ -36,6 +36,7 @@ class TkToolTip:
     FG = "black"
     FONT: Optional[Tuple[str, int, str]]  = ("TkDefaultFont", 8, "normal")
     BORDERWIDTH = 1
+    OPACITY = 1.0
     RELIEF = "solid"
     JUSTIFY = "center"
     WRAPLENGTH = 0
@@ -53,7 +54,7 @@ class TkToolTip:
 
     # list of public parameters
     PARAMS = [
-        "text", "state", "bg", "fg", "font", "borderwidth", "relief", "justify",
+        "text", "state", "bg", "fg", "font", "borderwidth", "opacity", "relief", "justify",
         "wraplength", "padx", "pady", "ipadx", "ipady", "origin", "anchor",
         "follow_mouse", "show_delay", "hide_delay", "fade_in", "fade_out"
     ]
@@ -66,6 +67,7 @@ class TkToolTip:
     fg: str
     font: Optional[Tuple[str, int, str]]
     borderwidth: int
+    opacity: float
     relief: str
     justify: str
     wraplength: int
@@ -227,7 +229,7 @@ class TkToolTip:
         self.tip_window = Toplevel(self.widget)
         self.tip_window.wm_overrideredirect(True)
         self.tip_window.wm_geometry(f"+{x}+{y}")
-        self.tip_window.attributes("-alpha", 0.0 if self.fade_in else 1.0)
+        self.tip_window.attributes("-alpha", 0.0 if self.fade_in else self.opacity)
         label = Label(
             self.tip_window,
             text=self.text,
@@ -241,7 +243,7 @@ class TkToolTip:
         )
         label.pack(ipadx=self.ipadx, ipady=self.ipady)
         if self.fade_in:
-            self._fade(self.fade_in, 0.0, 1.0)
+            self._fade(self.fade_in, 0.0, self.opacity)
         self._schedule_auto_hide()
 
 
@@ -277,7 +279,7 @@ class TkToolTip:
         def step(current_step):
             if self.tip_window is None:
                 return
-            alpha = max(0.0, min(1.0, start_alpha + current_step * alpha_step))
+            alpha = max(0.0, min(self.opacity, start_alpha + current_step * alpha_step))
             try:
                 self.tip_window.attributes("-alpha", alpha)
             except Exception:
@@ -287,7 +289,8 @@ class TkToolTip:
             else:
                 try:
                     if self.tip_window is not None:
-                        self.tip_window.attributes("-alpha", max(0.0, min(1.0, end_alpha)))
+                        self.tip_window.attributes("-alpha", max(0.0, min(self.opacity, end_alpha))
+                        )
                 except Exception:
                     pass
                 if on_complete:
@@ -352,8 +355,7 @@ class TkToolTip:
         )
         x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
         self.tip_window.wm_geometry(f"+{x}+{y}")
-        current_alpha = self.tip_window.attributes("-alpha")
-        self.tip_window.attributes("-alpha", current_alpha)
+        self.tip_window.attributes("-alpha", self.opacity)
 
 
     #endregion
@@ -374,12 +376,16 @@ class TkToolTip:
                 value = kwargs.get(name, getattr(self, name.upper()))
                 if name == 'state':
                     assert value in ["normal", "disabled"], "Invalid state"
+                if name == 'opacity':
+                    assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
                 setattr(self, name, value)
         # Only set provided params
         else:
             for name, value in kwargs.items():
                 if name == 'state':
                     assert value in ["normal", "disabled"], "Invalid state"
+                if name == 'opacity':
+                    assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
                 setattr(self, name, value)
 
 
