@@ -122,7 +122,7 @@ def build_anchor_section(parent):
         button = ttk.Button(grid_frame, text=anchor, width=12)
         button.grid(row=row, column=col, padx=6, pady=6, sticky='nsew', ipadx=10, ipady=20)
         # Each button demonstrates a different anchor value for the tooltip
-        Tip.bind(button, text=f'anchor={anchor}', origin='widget', anchor=anchor)
+        Tip.bind(button, text=f'anchor={anchor}', origin='widget', anchor=anchor, padx=0, pady=0)
 
 
 def build_follow_section(parent):
@@ -213,28 +213,29 @@ def setup_configuration_groups(control_panel, tooltip, args_var=None):
 def create_configuration_vars():
     return {
         'text': tk.StringVar(value='Editable tooltip.'),
-        'state': tk.StringVar(value='normal'),
-        'bg': tk.StringVar(value='#ffffee'),
-        'fg': tk.StringVar(value='black'),
-        'font_family': tk.StringVar(value='TkDefaultFont'),
-        'font_size': tk.IntVar(value=9),
-        'font_style': tk.StringVar(value='normal'),
-        'justify': tk.StringVar(value='center'),
-        'wraplength': tk.IntVar(value=0),
-        'padx': tk.IntVar(value=4),
-        'pady': tk.IntVar(value=4),
-        'ipadx': tk.IntVar(value=4),
-        'ipady': tk.IntVar(value=4),
-        'origin': tk.StringVar(value='mouse'),
-        'anchor': tk.StringVar(value='nw'),
-        'follow_mouse': tk.BooleanVar(value=False),
-        'borderwidth': tk.IntVar(value=1),
-        'relief': tk.StringVar(value='solid'),
-        'opacity': tk.DoubleVar(value=1.0),
-        'show_delay': tk.IntVar(value=500),
-        'hide_delay': tk.IntVar(value=3000),
-        'fade_in': tk.IntVar(value=150),
-        'fade_out': tk.IntVar(value=75)
+        'state': tk.StringVar(value=Tip.STATE),
+        'bg': tk.StringVar(value=Tip.BG),
+        'fg': tk.StringVar(value=Tip.FG),
+        'font_family': tk.StringVar(value=Tip.FONT[0]),
+        'font_size': tk.IntVar(value=Tip.FONT[1]),
+        'font_style': tk.StringVar(value=Tip.FONT[2]),
+        'justify': tk.StringVar(value=Tip.JUSTIFY),
+        'wraplength': tk.IntVar(value=Tip.WRAPLENGTH),
+        'padx': tk.IntVar(value=Tip.PADX),
+        'pady': tk.IntVar(value=Tip.PADY),
+        'ipadx': tk.IntVar(value=Tip.IPADX),
+        'ipady': tk.IntVar(value=Tip.IPADY),
+        'origin': tk.StringVar(value=Tip.ORIGIN),
+        'anchor': tk.StringVar(value=Tip.ANCHOR),
+        'follow_mouse': tk.BooleanVar(value=Tip.FOLLOW_MOUSE),
+        'borderwidth': tk.IntVar(value=Tip.BORDERWIDTH),
+        'relief': tk.StringVar(value=Tip.RELIEF),
+        'opacity': tk.DoubleVar(value=Tip.OPACITY),
+        'show_delay': tk.IntVar(value=Tip.SHOW_DELAY),
+        'hide_delay': tk.IntVar(value=Tip.HIDE_DELAY),
+        'animation': tk.StringVar(value=Tip.ANIMATION),
+        'anim_in': tk.IntVar(value=Tip.ANIM_IN),
+        'anim_out': tk.IntVar(value=Tip.ANIM_OUT)
     }
 
 
@@ -282,8 +283,9 @@ def create_timing_group(parent, vars):
     group = create_config_group(parent, 'Timing (ms)', 1, 2)
     create_labeled_spinbox(group, 'Show Delay:', vars['show_delay'], 0, 5000, 50)
     create_labeled_spinbox(group, 'Hide Delay:', vars['hide_delay'], 0, 15000, 250)
-    create_labeled_spinbox(group, 'Fade In:', vars['fade_in'], 0, 2000, 25)
-    create_labeled_spinbox(group, 'Fade Out:', vars['fade_out'], 0, 2000, 25)
+    create_labeled_combobox(group, 'Animation:', vars['animation'], ['fade', 'slide', 'none'], readonly=True)
+    create_labeled_spinbox(group, 'Anim In:', vars['anim_in'], 0, 2000, 25)
+    create_labeled_spinbox(group, 'Anim Out:', vars['anim_out'], 0, 2000, 25)
 
 
 def setup_variable_tracing(vars, tooltip, args_var=None):
@@ -314,8 +316,9 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
                 follow_mouse=vars['follow_mouse'].get(),
                 show_delay=vars['show_delay'].get(),
                 hide_delay=vars['hide_delay'].get(),
-                fade_in=vars['fade_in'].get(),
-                fade_out=vars['fade_out'].get(),
+                animation=vars['animation'].get(),
+                anim_in=vars['anim_in'].get(),
+                anim_out=vars['anim_out'].get(),
                 opacity=vars['opacity'].get()
             )
         except tk.TclError:
@@ -342,8 +345,9 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
                     "follow_mouse": vars['follow_mouse'].get(),
                     "show_delay": vars['show_delay'].get(),
                     "hide_delay": vars['hide_delay'].get(),
-                    "fade_in": vars['fade_in'].get(),
-                    "fade_out": vars['fade_out'].get(),
+                    "animation": vars['animation'].get(),
+                    "anim_in": vars['anim_in'].get(),
+                    "anim_out": vars['anim_out'].get(),
                     "opacity": vars['opacity'].get()
                 }
             except tk.TclError:
