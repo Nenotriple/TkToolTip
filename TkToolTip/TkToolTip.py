@@ -19,13 +19,11 @@ from typing import Optional, Tuple, Any, Callable, Dict
 from tkinter import Toplevel, Label, Widget, Event
 
 # Local
+
 from .position_utils import calculate_position
+from .animation_utils import animate_tip_window, SLIDE_ANIM_DISTANCE
 
 # NOTE: Full typed call signatures for IDEs are provided in TkToolTip.pyi
-
-
-# Magic Numbers
-SLIDE_ANIM_DISTANCE = 8
 
 
 #endregion
@@ -243,97 +241,6 @@ class TkToolTip:
         self._schedule_auto_hide()
 
 
-    def _animate(self, show: bool) -> None:
-        """Unified animation handler for fade and slide."""
-        if not self.tip_window:
-            return
-        animation = getattr(self, 'animation', 'fade') or 'none'
-        duration = self.anim_in if show else self.anim_out
-        if not duration or animation == 'none':
-            self.tip_window.attributes("-alpha", self.opacity if show else 0.0)
-            if not show:
-                self._remove_tip_window()
-            return
-        start_alpha = 0.0 if show else self.opacity
-        end_alpha = self.opacity if show else 0.0
-        if animation == 'fade':
-            self._animate_fade(duration, start_alpha, end_alpha, on_complete=None if show else self._remove_tip_window)
-        elif animation == 'slide':
-            base_x, start_y, end_y = self._get_slide_coords(show)
-            self._animate_slide_fade(duration, base_x, start_y, base_x, end_y, start_alpha, end_alpha, on_complete=None if show else self._remove_tip_window)
-
-
-    def _animate_fade(self, duration: int, start_alpha: float, end_alpha: float, on_complete: Optional[Callable[[], None]] = None) -> None:
-        """Fade animation."""
-        if not self.tip_window:
-            return
-        steps = max(1, duration // 10)
-        alpha_step = (end_alpha - start_alpha) / steps
-
-        def step(i):
-            if not self.tip_window:
-                return
-            alpha = max(0.0, min(self.opacity, start_alpha + i * alpha_step))
-            try:
-                self.tip_window.attributes("-alpha", alpha)
-            except Exception:
-                pass
-            if i < steps:
-                self.tip_window.after(10, step, i + 1)
-            else:
-                try:
-                    self.tip_window.attributes("-alpha", max(0.0, min(self.opacity, end_alpha)))
-                except Exception:
-                    pass
-                if on_complete:
-                    on_complete()
-        step(0)
-
-
-    def _animate_slide_fade(self, duration: int, start_x: int, start_y: int, end_x: int, end_y: int, start_alpha: float, end_alpha: float, on_complete: Optional[Callable[[], None]] = None) -> None:
-        """Slide and fade animation."""
-        if not self.tip_window:
-            return
-        steps = max(1, duration // 10)
-        dx = (end_x - start_x) / steps
-        dy = (end_y - start_y) / steps
-        da = (end_alpha - start_alpha) / steps
-
-        def step(i):
-            if not self.tip_window:
-                return
-            try:
-                new_x = int(start_x + dx * i)
-                new_y = int(start_y + dy * i)
-                self.tip_window.wm_geometry(f"+{new_x}+{new_y}")
-                alpha = max(0.0, min(self.opacity, start_alpha + da * i))
-                self.tip_window.attributes("-alpha", alpha)
-            except Exception:
-                pass
-            if i < steps:
-                self.tip_window.after(10, step, i + 1)
-            else:
-                try:
-                    self.tip_window.attributes("-alpha", max(0.0, min(self.opacity, end_alpha)))
-                except Exception:
-                    pass
-                if on_complete:
-                    on_complete()
-        step(0)
-
-
-    def _get_slide_coords(self, show: bool) -> Tuple[int, int]:
-        """Calculate the starting and ending Y coordinates for slide animation."""
-        geo = self.tip_window.geometry()
-        parts = geo.split('+')
-        base_x = int(parts[1])
-        base_y = int(parts[2])
-        start_y = base_y + SLIDE_ANIM_DISTANCE if show else base_y
-        end_y = base_y if show else base_y + SLIDE_ANIM_DISTANCE
-        return base_x, start_y, end_y
-
-
-
     def _remove_tip_window(self) -> None:
         """Destroy and remove the tooltip window."""
         if self.tip_window:
@@ -347,6 +254,19 @@ class TkToolTip:
         """Hide and/or animate hiding the tooltip window."""
         if self.tip_window:
             self._animate(show=False)
+
+
+    def _animate(self, show: bool) -> None:
+        """Unified animation handler for fade and slide."""
+        animate_tip_window(
+            tip_window=self.tip_window,
+            animation=getattr(self, 'animation', 'fade') or 'none',
+            show=show,
+            opacity=self.opacity,
+            anim_in=self.anim_in,
+            anim_out=self.anim_out,
+            remove_tip_window=self._remove_tip_window
+        )
 
 
     #endregion
