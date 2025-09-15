@@ -23,6 +23,11 @@ from .position_utils import calculate_position
 
 # NOTE: Full typed call signatures for IDEs are provided in TkToolTip.pyi
 
+
+# Magic Numbers
+SLIDE_ANIM_DISTANCE = 8
+
+
 #endregion
 #region TkToolTip
 
@@ -47,16 +52,17 @@ class TkToolTip:
     ORIGIN = "mouse"
     ANCHOR = "nw"
     FOLLOW_MOUSE = False
-    SHOW_DELAY = 10
-    HIDE_DELAY = 3000
-    FADE_IN = 125
-    FADE_OUT = 50
+    SHOW_DELAY = 100
+    HIDE_DELAY = 5000
+    ANIMATION = "fade"
+    ANIM_IN = 75
+    ANIM_OUT = 50
 
     # list of public parameters
     PARAMS = [
-        "text", "state", "bg", "fg", "font", "borderwidth", "opacity", "relief", "justify",
-        "wraplength", "padx", "pady", "ipadx", "ipady", "origin", "anchor",
-        "follow_mouse", "show_delay", "hide_delay", "fade_in", "fade_out"
+        "text", "state", "bg", "fg", "font", "borderwidth", "opacity", "relief",
+        "justify", "wraplength", "padx", "pady", "ipadx", "ipady", "origin", "anchor",
+        "follow_mouse", "show_delay", "hide_delay", "animation", "anim_in", "anim_out"
     ]
 
     # For IDEs and type checkers
@@ -80,8 +86,9 @@ class TkToolTip:
     follow_mouse: bool
     show_delay: int
     hide_delay: int
-    fade_in: int
-    fade_out: int
+    animation: str
+    anim_in: int
+    anim_out: int
 
 
     #endregion
@@ -229,22 +236,102 @@ class TkToolTip:
         self.tip_window = Toplevel(self.widget)
         self.tip_window.wm_overrideredirect(True)
         self.tip_window.wm_geometry(f"+{x}+{y}")
-        self.tip_window.attributes("-alpha", 0.0 if self.fade_in else self.opacity)
-        label = Label(
-            self.tip_window,
-            text=self.text,
-            background=self.bg,
-            foreground=self.fg,
-            font=self.font,
-            relief=self.relief,
-            borderwidth=self.borderwidth,
-            justify=self.justify,
-            wraplength=self.wraplength
-        )
+        label = Label(self.tip_window)
         label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        if self.fade_in:
-            self._fade(self.fade_in, 0.0, self.opacity)
+        self.update_tip_label(label)
+        self._animate(show=True)
         self._schedule_auto_hide()
+
+
+    def _animate(self, show: bool) -> None:
+        """Unified animation handler for fade and slide."""
+        if not self.tip_window:
+            return
+        animation = getattr(self, 'animation', 'fade') or 'none'
+        duration = self.anim_in if show else self.anim_out
+        if not duration or animation == 'none':
+            self.tip_window.attributes("-alpha", self.opacity if show else 0.0)
+            if not show:
+                self._remove_tip_window()
+            return
+        start_alpha = 0.0 if show else self.opacity
+        end_alpha = self.opacity if show else 0.0
+        if animation == 'fade':
+            self._animate_fade(duration, start_alpha, end_alpha, on_complete=None if show else self._remove_tip_window)
+        elif animation == 'slide':
+            base_x, start_y, end_y = self._get_slide_coords(show)
+            self._animate_slide_fade(duration, base_x, start_y, base_x, end_y, start_alpha, end_alpha, on_complete=None if show else self._remove_tip_window)
+
+
+    def _animate_fade(self, duration: int, start_alpha: float, end_alpha: float, on_complete: Optional[Callable[[], None]] = None) -> None:
+        """Fade animation."""
+        if not self.tip_window:
+            return
+        steps = max(1, duration // 10)
+        alpha_step = (end_alpha - start_alpha) / steps
+
+        def step(i):
+            if not self.tip_window:
+                return
+            alpha = max(0.0, min(self.opacity, start_alpha + i * alpha_step))
+            try:
+                self.tip_window.attributes("-alpha", alpha)
+            except Exception:
+                pass
+            if i < steps:
+                self.tip_window.after(10, step, i + 1)
+            else:
+                try:
+                    self.tip_window.attributes("-alpha", max(0.0, min(self.opacity, end_alpha)))
+                except Exception:
+                    pass
+                if on_complete:
+                    on_complete()
+        step(0)
+
+
+    def _animate_slide_fade(self, duration: int, start_x: int, start_y: int, end_x: int, end_y: int, start_alpha: float, end_alpha: float, on_complete: Optional[Callable[[], None]] = None) -> None:
+        """Slide and fade animation."""
+        if not self.tip_window:
+            return
+        steps = max(1, duration // 10)
+        dx = (end_x - start_x) / steps
+        dy = (end_y - start_y) / steps
+        da = (end_alpha - start_alpha) / steps
+
+        def step(i):
+            if not self.tip_window:
+                return
+            try:
+                new_x = int(start_x + dx * i)
+                new_y = int(start_y + dy * i)
+                self.tip_window.wm_geometry(f"+{new_x}+{new_y}")
+                alpha = max(0.0, min(self.opacity, start_alpha + da * i))
+                self.tip_window.attributes("-alpha", alpha)
+            except Exception:
+                pass
+            if i < steps:
+                self.tip_window.after(10, step, i + 1)
+            else:
+                try:
+                    self.tip_window.attributes("-alpha", max(0.0, min(self.opacity, end_alpha)))
+                except Exception:
+                    pass
+                if on_complete:
+                    on_complete()
+        step(0)
+
+
+    def _get_slide_coords(self, show: bool) -> Tuple[int, int]:
+        """Calculate the starting and ending Y coordinates for slide animation."""
+        geo = self.tip_window.geometry()
+        parts = geo.split('+')
+        base_x = int(parts[1])
+        base_y = int(parts[2])
+        start_y = base_y + SLIDE_ANIM_DISTANCE if show else base_y
+        end_y = base_y if show else base_y + SLIDE_ANIM_DISTANCE
+        return base_x, start_y, end_y
+
 
 
     def _remove_tip_window(self) -> None:
@@ -257,46 +344,9 @@ class TkToolTip:
 
 
     def _hide_tip(self) -> None:
-        """Hide or fade out the tooltip window."""
+        """Hide and/or animate hiding the tooltip window."""
         if self.tip_window:
-            if self.fade_out:
-                self._fade(self.fade_out, 1.0, 0.0, on_complete=self._remove_tip_window)
-            else:
-                self._remove_tip_window()
-
-
-    #endregion
-    #region Effects
-
-
-    def _fade(self, duration: int, start_alpha: float, end_alpha: float, on_complete: Optional[Callable[[], None]] = None) -> None:
-        """Fade the tooltip window in or out."""
-        if self.tip_window is None:
-            return
-        steps = max(1, duration // 10)
-        alpha_step = (end_alpha - start_alpha) / steps
-
-        def step(current_step):
-            if self.tip_window is None:
-                return
-            alpha = max(0.0, min(self.opacity, start_alpha + current_step * alpha_step))
-            try:
-                self.tip_window.attributes("-alpha", alpha)
-            except Exception:
-                pass
-            if current_step < steps:
-                self.tip_window.after(10, step, current_step + 1)
-            else:
-                try:
-                    if self.tip_window is not None:
-                        self.tip_window.attributes("-alpha", max(0.0, min(self.opacity, end_alpha))
-                        )
-                except Exception:
-                    pass
-                if on_complete:
-                    on_complete()
-
-        step(0)
+            self._animate(show=False)
 
 
     #endregion
@@ -343,19 +393,14 @@ class TkToolTip:
         if not self.tip_window:
             return
         label: Label = self.tip_window.winfo_children()[0]
-        label.config(
-            text=self.text,
-            background=self.bg,
-            foreground=self.fg,
-            font=self.font,
-            relief=self.relief,
-            borderwidth=self.borderwidth,
-            justify=self.justify,
-            wraplength=self.wraplength
-        )
+        self.update_tip_label(label)
         x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
         self.tip_window.wm_geometry(f"+{x}+{y}")
         self.tip_window.attributes("-alpha", self.opacity)
+
+
+    def update_tip_label(self, label: Label) -> None:
+        label.config(text=self.text, background=self.bg, foreground=self.fg, font=self.font, relief=self.relief, borderwidth=self.borderwidth, justify=self.justify, wraplength=self.wraplength)
 
 
     #endregion

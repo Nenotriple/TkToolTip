@@ -57,7 +57,18 @@ tooltip.config(text="Example!")
 | `origin`      | `str`            | `"mouse"`                         | `"mouse"`, `"widget"`                                                                    | Reference point for positioning the tooltip.                                           |
 | `anchor`      | `str`            | `"nw"`                            | `"n"`, `"ne"`, `"e"`, `"se"`, `"s"`, `"sw"`, `"w"`, `"nw"`, `"center"`, `"c"`, `"nesw"`  | Position of the tooltip relative to the widget when using widget origin.               |
 | `follow_mouse`| `bool`           | `False`                           | `True`, `False`                                                                          | If enabled, the tooltip moves with the mouse while hovering over the widget.           |
-| `show_delay`  | `int`            | `10`                              | Any integer ≥ 0                                                                          | Time in milliseconds to wait before showing the tooltip after hovering.                |
-| `hide_delay`  | `int`            | `3000`                            | Any integer ≥ 0                                                                          | Time in milliseconds before the tooltip automatically hides.                           |
-| `fade_in`     | `int`            | `125`                             | Any integer ≥ 0                                                                          | Duration of the fade-in animation when the tooltip appears.                            |
-| `fade_out`    | `int`            | `50`                              | Any integer ≥ 0                                                                          | Duration of the fade-out animation when the tooltip disappears.                        |
+| `show_delay`  | `int`            | `100`                             | Any integer ≥ 0                                                                          | Time in milliseconds to wait before showing the tooltip after hovering.                |
+| `hide_delay`  | `int`            | `5000`                            | Any integer ≥ 0                                                                          | Time in milliseconds before the tooltip automatically hides.                           |
+| `animation`   | `str`            | `"fade"`                          | `"fade"`, `"slide"`, `"none"`                                                            | Animation style for showing/hiding the tooltip.                                        |
+| `anim_in`     | `int`            | `75`                              | Any integer ≥ 0                                                                          | Duration of the show (enter) animation.                                                |
+| `anim_out`    | `int`            | `50`                              | Any integer ≥ 0                                                                          | Duration of the hide (exit) animation.                                                 |
+
+### 🆕 Animation Styles
+
+Set `animation` to control how the tooltip appears/disappears:
+
+* `fade` (default): Cross-fade opacity from 0 → `opacity`.
+* `slide`: Slides upward a few pixels while fading in; reverses when hiding.
+* `none`: Instantly shows/hides with no transitions.
+
+Use `anim_in` / `anim_out` to set durations (ms).

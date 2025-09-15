@@ -66,16 +66,19 @@ class TkToolTip:
         When True, tooltip follows the mouse while hovering (overrides origin/anchor).
 
     show_delay : int, optional
-        Delay before showing in ms (10)
+        Delay before showing in ms (100)
 
     hide_delay : int, optional
-        Auto-hide after this many ms (3000). Suppresses re-show until leave/enter.
+        Auto-hide after this many ms (5000). Suppresses re-show until leave/enter.
 
-    fade_in : int, optional
-        Fade-in time in ms (125)
+    animation : str, optional
+        Animation style: "fade", "slide", or "none" ("fade")
 
-    fade_out : int, optional
-        Fade-out time in ms (50)
+    anim_in : int, optional
+        Animation duration entering in ms (75)
+
+    anim_out : int, optional
+        Animation duration exiting in ms (50)
 
     Methods
     -------
@@ -110,9 +113,13 @@ class TkToolTip:
     FOLLOW_MOUSE: bool
     SHOW_DELAY: int
     HIDE_DELAY: int
-    FADE_IN: int
-    FADE_OUT: int
+    ANIMATION: str
+    ANIM_IN: int
+    ANIM_OUT: int
     PARAMS: list[str]
+
+    # Magic numbers
+    SLIDE_DISTANCE = int
 
 
     # Instance attributes (after initialization)
@@ -136,8 +143,9 @@ class TkToolTip:
     follow_mouse: bool
     show_delay: int
     hide_delay: int
-    fade_in: int
-    fade_out: int
+    animation: str
+    anim_in: int
+    anim_out: int
     tip_window: Optional[Toplevel]
     show_after_id: Optional[int]
     hide_id: Optional[int]
@@ -164,10 +172,11 @@ class TkToolTip:
         origin: str = "mouse",
         anchor: str = "nw",
         follow_mouse: bool = False,
-        show_delay: int = 10,
-        hide_delay: int = 3000,
-        fade_in: int = 125,
-        fade_out: int = 50
+        show_delay: int = 100,
+        hide_delay: int = 5000,
+        animation: str = "fade",
+        anim_in: int = 75,
+        anim_out: int = 50
     ) -> None: ...
 
 
@@ -193,10 +202,11 @@ class TkToolTip:
         origin: str = "mouse",
         anchor: str = "nw",
         follow_mouse: bool = False,
-        show_delay: int = 10,
-        hide_delay: int = 3000,
-        fade_in: int = 125,
-        fade_out: int = 50
+        show_delay: int = 100,
+        hide_delay: int = 5000,
+        animation: str = "fade",
+        anim_in: int = 75,
+        anim_out: int = 50
     ) -> TkToolTip: ...
 
 
@@ -222,8 +232,9 @@ class TkToolTip:
         follow_mouse: Optional[bool] = None,
         show_delay: Optional[int] = None,
         hide_delay: Optional[int] = None,
-        fade_in: Optional[int] = None,
-        fade_out: Optional[int] = None
+        animation: Optional[str] = None,
+        anim_in: Optional[int] = None,
+        anim_out: Optional[int] = None
     ) -> None: ...
 
 
