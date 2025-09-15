@@ -13,7 +13,7 @@ Add customizable tooltips to any tkinter widget.
 
 # Standard
 from __future__ import annotations
-from typing import Optional, Tuple, Any, Callable, Dict
+from typing import Optional, Tuple, Any, Callable, Dict, Union
 
 # Standard - GUI
 from tkinter import Toplevel, Label, Widget, Event
@@ -63,7 +63,7 @@ class TkToolTip:
 
     # For IDEs and type checkers
     widget: Optional[Widget]
-    text: str
+    text: Union[str, Callable[[], str]]
     state: str
     bg: str
     fg: str
@@ -196,7 +196,7 @@ class TkToolTip:
 
     def _show_tip(self, event: Event) -> None:
         """Display the tooltip at the specified position."""
-        if self.state == "disabled" or not self.text or self._suppress_until_leave:
+        if self.state == "disabled" or not self._get_text() or self._suppress_until_leave:
             return
         if self.follow_mouse:
             x, y = self._calculate_follow_position(event)  # ignores origin/anchor
@@ -322,7 +322,26 @@ class TkToolTip:
 
 
     def update_tip_label(self, label: Label) -> None:
-        label.config(text=self.text, background=self.bg, foreground=self.fg, font=self.font, relief=self.relief, borderwidth=self.borderwidth, justify=self.justify, wraplength=self.wraplength)
+        label.config(
+            text=self._get_text(),
+            background=self.bg,
+            foreground=self.fg,
+            font=self.font,
+            relief=self.relief,
+            borderwidth=self.borderwidth,
+            justify=self.justify,
+            wraplength=self.wraplength
+        )
+
+
+    def _get_text(self) -> str:
+        """Return the current tooltip text, calling if it's a function."""
+        if callable(self.text):
+            try:
+                return self.text()
+            except Exception:
+                return ""
+        return self.text
 
 
     #endregion

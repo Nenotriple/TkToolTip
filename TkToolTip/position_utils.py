@@ -79,7 +79,7 @@ def _estimate_tip_size(tip: 'TkToolTip') -> tuple[int, int]:
     temp_window.withdraw()
     temp_window.wm_overrideredirect(True)
     temp_label = Label(temp_window,
-        text=tip.text,
+        text=tip._get_text() if hasattr(tip, "_get_text") else tip.text,
         font=tip.font,
         relief=tip.relief,
         borderwidth=tip.borderwidth,

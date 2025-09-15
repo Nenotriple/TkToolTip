@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Tuple, Literal
+from typing import Optional, Tuple, Literal, Callable, Union
 from tkinter import Widget, Toplevel, Event
 
 
@@ -12,8 +12,8 @@ class TkToolTip:
     widget : tkinter.Widget, optional
         The widget to attach the tooltip to
 
-    text : str, optional
-        Tooltip text ("")
+    text : str or callable, optional
+        Tooltip text or a function returning text ("")
 
     state : str, optional
         Tooltip state, "normal" or "disabled" ("normal")
@@ -124,7 +124,7 @@ class TkToolTip:
 
     # Instance attributes (after initialization)
     widget: Optional[Widget]
-    text: str
+    text: Union[str, Callable[[], str]]
     state: Literal["normal", "disabled"]
     bg: str
     fg: str
@@ -155,7 +155,7 @@ class TkToolTip:
         self,
         widget: Optional[Widget] = None,
         *,
-        text: str = "",
+        text: Union[str, Callable[[], str]] = "",
         state: Literal["normal", "disabled"] = "normal",
         bg: str = "#ffffee",
         fg: str = "black",
@@ -185,7 +185,7 @@ class TkToolTip:
         cls,
         widget: Widget,
         *,
-        text: str = "",
+        text: Union[str, Callable[[], str]] = "",
         state: Literal["normal", "disabled"] = "normal",
         bg: str = "#ffffee",
         fg: str = "black",
@@ -213,7 +213,7 @@ class TkToolTip:
     def config(
         self,
         *,
-        text: Optional[str] = None,
+        text: Optional[Union[str, Callable[[], str]]] = None,
         state: Optional[Literal["normal", "disabled"]] = None,
         bg: Optional[str] = None,
         fg: Optional[str] = None,
