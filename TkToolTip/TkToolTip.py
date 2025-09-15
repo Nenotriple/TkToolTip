@@ -119,6 +119,8 @@ class TkToolTip:
             self.widget.unbind('<Leave>')
             self.widget.unbind('<Button-1>')
             self.widget.unbind('<B1-Motion>')
+            self.widget.unbind('<ButtonPress>')
+            self.widget.unbind('<ButtonRelease>')
         self.hide()
 
 
@@ -156,6 +158,8 @@ class TkToolTip:
         self.widget.bind('<Leave>', self._on_leave, add="+")
         self.widget.bind("<Button-1>", self.hide, add="+")
         self.widget.bind('<B1-Motion>', self.hide, add="+")
+        self.widget.bind('<ButtonPress>', self.hide, add="+")
+        self.widget.bind('<ButtonRelease>', self.hide, add="+")
 
 
     def _on_leave(self, event: Optional[Event] = None) -> None:
