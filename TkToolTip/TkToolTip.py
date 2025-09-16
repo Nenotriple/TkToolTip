@@ -11,15 +11,14 @@ Add customizable tooltips to any tkinter widget.
 
 #region Imports
 
-# Standard
-from __future__ import annotations
-from typing import Optional, Tuple, Any, Callable, Dict, Union
-
 # Standard - GUI
 from tkinter import Toplevel, Label, Widget, Event
 
-# Local
+# Typing
+from __future__ import annotations
+from typing import Optional, Tuple, Any, Callable, Dict, Union
 
+# Local
 from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
 from .animation_utils import animate_tip_window, SLIDE_ANIM_DISTANCE
 

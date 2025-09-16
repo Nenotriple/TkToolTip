@@ -9,8 +9,11 @@ Showcases all features of the TkToolTip module in an interactive GUI.
 #region Imports
 
 
+# Standard
 import os
 import sys
+
+# Standard - GUI
 import tkinter as tk
 from tkinter import ttk, colorchooser, font as tkfont
 

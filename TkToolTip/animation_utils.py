@@ -5,8 +5,11 @@ This module contains functions for handling tooltip animations (fade, slide, etc
 """
 
 
-from typing import Optional, Callable, Tuple
+# Standard - GUI
 from tkinter import Toplevel
+
+# Typing
+from typing import Optional, Callable, Tuple
 
 
 # Magic Numbers

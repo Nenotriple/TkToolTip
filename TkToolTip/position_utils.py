@@ -5,10 +5,11 @@ This module contains functions for calculating and adjusting tooltip positions
 to ensure they stay within screen bounds and don't overlap with the mouse cursor.
 """
 
-from __future__ import annotations
-
+# Standard - GUI
 from tkinter import Toplevel, Label, Widget, Event
 
+# Typing
+from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from . import TkToolTip

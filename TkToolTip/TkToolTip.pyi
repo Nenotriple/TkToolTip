@@ -1,6 +1,9 @@
+# Standard - GUI
+from tkinter import Widget, Toplevel, Event
+
+# Typing
 from __future__ import annotations
 from typing import Optional, Tuple, Literal, Callable, Union
-from tkinter import Widget, Toplevel, Event
 
 
 class TkToolTip:
