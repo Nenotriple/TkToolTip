@@ -1,9 +1,9 @@
-# Standard - GUI
-from tkinter import Widget, Toplevel, Event
-
 # Typing
 from __future__ import annotations
 from typing import Optional, Tuple, Literal, Callable, Union
+
+# Standard - GUI
+from tkinter import Widget, Toplevel, Event
 
 
 class TkToolTip:
@@ -60,13 +60,18 @@ class TkToolTip:
     origin : str, optional
         Origin point of the tooltip, "mouse" or "widget" ("mouse")
 
-    anchor : str, optional
-        Position of the tooltip relative to the widget when origin is "widget" ("nw").
+    widget_anchor : str, optional
+        Specifies the point on the widget used for alignment when origin is "widget" ("nw").
+        Valid values are combinations of n, e, s, w. Special values "center" or "c"
+        center the tooltip. "nesw" also treated as center.
+
+    tooltip_anchor : str, optional
+        Specifies the point on the tooltip used for alignment when origin is "widget" ("nw").
         Valid values are combinations of n, e, s, w. Special values "center" or "c"
         center the tooltip. "nesw" also treated as center.
 
     follow_mouse : bool, optional
-        When True, tooltip follows the mouse while hovering (overrides origin/anchor).
+        When True, tooltip follows the mouse while hovering (overrides origin/widget_anchor).
 
     show_delay : int, optional
         Delay before showing in ms (100)
@@ -112,7 +117,8 @@ class TkToolTip:
     IPADX: int
     IPADY: int
     ORIGIN: str
-    ANCHOR: str
+    WIDGET_ANCHOR: str
+    TOOLTIP_ANCHOR: str
     FOLLOW_MOUSE: bool
     SHOW_DELAY: int
     HIDE_DELAY: int
@@ -142,7 +148,8 @@ class TkToolTip:
     ipadx: int
     ipady: int
     origin: str
-    anchor: str
+    widget_anchor: str
+    tooltip_anchor: str
     follow_mouse: bool
     show_delay: int
     hide_delay: int
@@ -159,27 +166,28 @@ class TkToolTip:
         widget: Optional[Widget] = None,
         *,
         text: Union[str, Callable[[], str]] = "",
-        state: Literal["normal", "disabled"] = "normal",
-        bg: str = "#ffffee",
-        fg: str = "black",
-        font: Optional[Tuple[str, int, str]] = ("TkDefaultFont", 8, "normal"),
-        borderwidth: int = 1,
-        opacity: float = 1.0,
-        relief: str = "solid",
-        justify: str = "center",
-        wraplength: int = 0,
-        padx: int = 1,
-        pady: int = 1,
-        ipadx: int = 2,
-        ipady: int = 2,
-        origin: str = "mouse",
-        anchor: str = "nw",
-        follow_mouse: bool = False,
-        show_delay: int = 100,
-        hide_delay: int = 5000,
-        animation: str = "fade",
-        anim_in: int = 75,
-        anim_out: int = 50
+        state: Literal["normal", "disabled"] = TkToolTip.STATE,
+        bg: str = TkToolTip.BG,
+        fg: str = TkToolTip.FG,
+        font: Optional[Tuple[str, int, str]] = TkToolTip.FONT,
+        borderwidth: int = TkToolTip.BORDERWIDTH,
+        opacity: float = TkToolTip.OPACITY,
+        relief: str = TkToolTip.RELIEF,
+        justify: str = TkToolTip.JUSTIFY,
+        wraplength: int = TkToolTip.WRAPLENGTH,
+        padx: int = TkToolTip.PADX,
+        pady: int = TkToolTip.PADY,
+        ipadx: int = TkToolTip.IPADX,
+        ipady: int = TkToolTip.IPADY,
+        origin: str = TkToolTip.ORIGIN,
+        widget_anchor: str = TkToolTip.WIDGET_ANCHOR,
+        tooltip_anchor: str = TkToolTip.TOOLTIP_ANCHOR,
+        follow_mouse: bool = TkToolTip.FOLLOW_MOUSE,
+        show_delay: int = TkToolTip.SHOW_DELAY,
+        hide_delay: int = TkToolTip.HIDE_DELAY,
+        animation: str = TkToolTip.ANIMATION,
+        anim_in: int = TkToolTip.ANIM_IN,
+        anim_out: int = TkToolTip.ANIM_OUT
     ) -> None: ...
 
 
@@ -189,27 +197,28 @@ class TkToolTip:
         widget: Widget,
         *,
         text: Union[str, Callable[[], str]] = "",
-        state: Literal["normal", "disabled"] = "normal",
-        bg: str = "#ffffee",
-        fg: str = "black",
-        font: Optional[Tuple[str, int, str]] = ("TkDefaultFont", 8, "normal"),
-        borderwidth: int = 1,
-        opacity: float = 1.0,
-        relief: str = "solid",
-        justify: str = "center",
-        wraplength: int = 0,
-        padx: int = 1,
-        pady: int = 1,
-        ipadx: int = 2,
-        ipady: int = 2,
-        origin: str = "mouse",
-        anchor: str = "nw",
-        follow_mouse: bool = False,
-        show_delay: int = 100,
-        hide_delay: int = 5000,
-        animation: str = "fade",
-        anim_in: int = 75,
-        anim_out: int = 50
+        state: Literal["normal", "disabled"] = TkToolTip.STATE,
+        bg: str = TkToolTip.BG,
+        fg: str = TkToolTip.FG,
+        font: Optional[Tuple[str, int, str]] = TkToolTip.FONT,
+        borderwidth: int = TkToolTip.BORDERWIDTH,
+        opacity: float = TkToolTip.OPACITY,
+        relief: str = TkToolTip.RELIEF,
+        justify: str = TkToolTip.JUSTIFY,
+        wraplength: int = TkToolTip.WRAPLENGTH,
+        padx: int = TkToolTip.PADX,
+        pady: int = TkToolTip.PADY,
+        ipadx: int = TkToolTip.IPADX,
+        ipady: int = TkToolTip.IPADY,
+        origin: str = TkToolTip.ORIGIN,
+        widget_anchor: str = TkToolTip.WIDGET_ANCHOR,
+        tooltip_anchor: str = TkToolTip.TOOLTIP_ANCHOR,
+        follow_mouse: bool = TkToolTip.FOLLOW_MOUSE,
+        show_delay: int = TkToolTip.SHOW_DELAY,
+        hide_delay: int = TkToolTip.HIDE_DELAY,
+        animation: str = TkToolTip.ANIMATION,
+        anim_in: int = TkToolTip.ANIM_IN,
+        anim_out: int = TkToolTip.ANIM_OUT
     ) -> TkToolTip: ...
 
 
@@ -231,7 +240,8 @@ class TkToolTip:
         ipadx: Optional[int] = None,
         ipady: Optional[int] = None,
         origin: Optional[str] = None,
-        anchor: Optional[str] = None,
+        widget_anchor: Optional[str] = None,
+        tooltip_anchor: Optional[str] = None,
         follow_mouse: Optional[bool] = None,
         show_delay: Optional[int] = None,
         hide_delay: Optional[int] = None,

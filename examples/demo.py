@@ -31,6 +31,10 @@ if _PROJECT_ROOT not in sys.path:
 
 from TkToolTip import TkToolTip as Tip
 
+# You can override TkToolTip defaults like this, which will apply to all tooltips that do not explicitly set these options.
+Tip.ANIMATION = "slide"
+Tip.HIDE_DELAY = 8000
+
 
 #endregion
 #region Main
@@ -111,24 +115,45 @@ def build_anchor_follow_callback_section(parent):
 
 def build_anchor_section(parent):
     # Demonstrates how anchor positions affect tooltip placement when origin="widget"
-    section_frame = create_section(parent, "Anchors (origin=widget)")
+    section_frame = create_section(parent, "Anchors (origin=widget, and widget_anchor as labeled)")
     container = ttk.Frame(section_frame)
     container.pack(pady=12, expand=True)
     grid_frame = ttk.Frame(container)
     grid_frame.pack()
     anchor_positions = {
-        'nw': (0, 0), 'n': (0, 1), 'ne': (0, 2),
-        'w': (1, 0), 'center': (1, 1), 'e': (1, 2),
-        'sw': (2, 0), 's': (2, 1), 'se': (2, 2),
+        'nw': (0, 0), 'n':      (0, 1), 'ne': (0, 2),
+        'w':  (1, 0), 'center': (1, 1), 'e':  (1, 2),
+        'sw': (2, 0), 's':      (2, 1), 'se': (2, 2),
     }
     for i in range(3):
         grid_frame.columnconfigure(i, weight=1)
         grid_frame.rowconfigure(i, weight=1)
+    # Store buttons and their tooltips for later update
+    buttons = []
+    tooltips = []
     for anchor, (row, col) in anchor_positions.items():
         button = ttk.Button(grid_frame, text=anchor, width=12)
         button.grid(row=row, column=col, padx=6, pady=6, sticky='nsew', ipadx=10, ipady=20)
-        # Each button demonstrates a different anchor value for the tooltip
-        Tip.bind(button, text=f'anchor={anchor}', origin='widget', anchor=anchor, padx=0, pady=0)
+        tip = Tip.bind(button, text=f'anchor={anchor}', origin='widget', widget_anchor=anchor, padx=0, pady=0)
+        buttons.append(button)
+        tooltips.append(tip)
+    # Add combobox for tooltip_anchor selection
+    anchor_choices = ['nw', 'n', 'ne', 'w', 'center', 'e', 'sw', 's', 'se']
+    cb_frame = ttk.Frame(container)
+    cb_frame.pack(pady=(12, 0))
+    ttk.Label(cb_frame, text="tooltip_anchor:").pack(side='left', padx=(0, 6))
+    tooltip_anchor_var = tk.StringVar(value='center')
+    anchor_cb = ttk.Combobox(cb_frame, textvariable=tooltip_anchor_var, values=anchor_choices, state='readonly', width=10)
+    anchor_cb.pack(side='left')
+
+    def update_tooltip_anchors(*_):
+        val = tooltip_anchor_var.get()
+        for tip in tooltips:
+            tip.config(tooltip_anchor=val)
+
+    tooltip_anchor_var.trace_add('write', update_tooltip_anchors)
+    # Initial update
+    update_tooltip_anchors()
 
 
 def build_follow_section(parent):
@@ -248,7 +273,8 @@ def create_configuration_vars():
         'ipadx': tk.IntVar(value=Tip.IPADX),
         'ipady': tk.IntVar(value=Tip.IPADY),
         'origin': tk.StringVar(value=Tip.ORIGIN),
-        'anchor': tk.StringVar(value=Tip.ANCHOR),
+        'widget_anchor': tk.StringVar(value=Tip.WIDGET_ANCHOR),
+        'tooltip_anchor': tk.StringVar(value=Tip.TOOLTIP_ANCHOR),
         'follow_mouse': tk.BooleanVar(value=Tip.FOLLOW_MOUSE),
         'borderwidth': tk.IntVar(value=Tip.BORDERWIDTH),
         'relief': tk.StringVar(value=Tip.RELIEF),
@@ -290,7 +316,8 @@ def create_layout_group(parent, vars):
 def create_position_group(parent, vars):
     group = create_config_group(parent, 'Positioning', 1, 0)
     create_labeled_combobox(group, 'Origin:', vars['origin'], ['mouse', 'widget'], readonly=True)
-    create_labeled_combobox(group, 'Anchor:', vars['anchor'], ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center'], readonly=True)
+    create_labeled_combobox(group, 'widget_anchor:', vars['widget_anchor'], ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center'], readonly=True)
+    create_labeled_combobox(group, 'tooltip_anchor:', vars['tooltip_anchor'], ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center'], readonly=True)
     create_labeled_checkbutton(group, 'Follow Mouse:', vars['follow_mouse'])
 
 
@@ -334,7 +361,8 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
                 ipadx=vars['ipadx'].get(),
                 ipady=vars['ipady'].get(),
                 origin=vars['origin'].get(),
-                anchor=vars['anchor'].get(),
+                widget_anchor=vars['widget_anchor'].get(),
+                tooltip_anchor=vars['tooltip_anchor'].get(),
                 follow_mouse=vars['follow_mouse'].get(),
                 show_delay=vars['show_delay'].get(),
                 hide_delay=vars['hide_delay'].get(),
@@ -363,7 +391,8 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
                     "ipadx": vars['ipadx'].get(),
                     "ipady": vars['ipady'].get(),
                     "origin": vars['origin'].get(),
-                    "anchor": vars['anchor'].get(),
+                    "widget_anchor": vars['widget_anchor'].get(),
+                    "tooltip_anchor": vars['tooltip_anchor'].get(),
                     "follow_mouse": vars['follow_mouse'].get(),
                     "show_delay": vars['show_delay'].get(),
                     "hide_delay": vars['hide_delay'].get(),

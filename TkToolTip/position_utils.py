@@ -5,14 +5,33 @@ This module contains functions for calculating and adjusting tooltip positions
 to ensure they stay within screen bounds and don't overlap with the mouse cursor.
 """
 
-# Standard - GUI
-from tkinter import Toplevel, Label, Widget, Event
-
 # Typing
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from . import TkToolTip
+
+# Standard - GUI
+from tkinter import Toplevel, Label, Widget, Event
+
+
+
+def anchor_to_relative(anchor: str) -> tuple[float, float]:
+    """Convert an anchor string to relative (x,y) within a rectangle."""
+    a = (anchor or "nw").lower()
+    if a in ("center", "c") or set(a) == set("nesw"):
+        return 0.5, 0.5
+    x_rel = 0.5
+    y_rel = 0.5
+    if "n" in a:
+        y_rel = 0.0
+    elif "s" in a:
+        y_rel = 1.0
+    if "w" in a:
+        x_rel = 0.0
+    elif "e" in a:
+        x_rel = 1.0
+    return x_rel, y_rel
 
 
 def calculate_tooltip_position(tip: 'TkToolTip', event: Event) -> tuple[int, int]:
@@ -20,28 +39,21 @@ def calculate_tooltip_position(tip: 'TkToolTip', event: Event) -> tuple[int, int
     if tip.origin == "mouse":
         x: int = event.x_root + tip.padx
         y: int = event.y_root + tip.pady
-    else:  # origin is "widget"
-        widget: Widget = tip.widget
-        x, y, widget_width, widget_height = _get_widget_geometry(widget)
-        anchor_value = tip.anchor.lower() if tip.anchor else ""
-        is_centered = (all(d in anchor_value for d in ['n', 's', 'e', 'w']) or anchor_value in {"center", "c"})
-        if is_centered:
-            x += widget_width // 2
-            y += widget_height // 2
-        else:
-            # Horizontal
-            if "e" in anchor_value:
-                x += widget_width
-            elif "w" not in anchor_value:
-                x += widget_width // 2
-            # Vertical
-            if "s" in anchor_value:
-                y += widget_height
-            elif "n" not in anchor_value:
-                y += widget_height // 2
-        x += tip.padx
-        y += tip.pady
-    # Ensure tooltip stays within screen bounds and away from mouse (unless origin is widget)
+        return adjust_position_for_screen_bounds(tip, x, y, event.x_root, event.y_root, tip.origin)
+    # origin == "widget"
+    widget = tip.widget
+    x0, y0, w, h = _get_widget_geometry(widget)
+    w_rel_x, w_rel_y = anchor_to_relative(getattr(tip, "widget_anchor", "nw"))
+    # Anchor point on widget
+    anchor_px_x = x0 + int(w_rel_x * w)
+    anchor_px_y = y0 + int(w_rel_y * h)
+    tip_w, tip_h = _estimate_tip_size(tip)
+    t_rel_x, t_rel_y = anchor_to_relative(getattr(tip, "tooltip_anchor", "nw"))
+    # Offset inside tooltip from its top-left to its anchor point
+    tip_offset_x = int(t_rel_x * tip_w)
+    tip_offset_y = int(t_rel_y * tip_h)
+    x = anchor_px_x - tip_offset_x + tip.padx
+    y = anchor_px_y - tip_offset_y + tip.pady
     return adjust_position_for_screen_bounds(tip, x, y, event.x_root, event.y_root, tip.origin)
 
 
@@ -89,8 +101,8 @@ def _estimate_tip_size(tip: 'TkToolTip') -> tuple[int, int]:
     )
     temp_label.pack(ipadx=tip.ipadx, ipady=tip.ipady)
     temp_window.update_idletasks()
-    tip_width = temp_label.winfo_reqwidth()
-    tip_height = temp_label.winfo_reqheight()
+    tip_width = temp_window.winfo_reqwidth()
+    tip_height = temp_window.winfo_reqheight()
     temp_window.destroy()
     return tip_width, tip_height
 

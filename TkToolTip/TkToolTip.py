@@ -11,12 +11,12 @@ Add customizable tooltips to any tkinter widget.
 
 #region Imports
 
-# Standard - GUI
-from tkinter import Toplevel, Label, Widget, Event
-
 # Typing
 from __future__ import annotations
 from typing import Optional, Tuple, Any, Callable, Dict, Union
+
+# Standard - GUI
+from tkinter import Toplevel, Label, Widget, Event
 
 # Local
 from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
@@ -45,7 +45,8 @@ class TkToolTip:
     IPADX = 2
     IPADY = 2
     ORIGIN = "mouse"
-    ANCHOR = "nw"
+    WIDGET_ANCHOR = "nw"
+    TOOLTIP_ANCHOR = "nw"
     FOLLOW_MOUSE = False
     SHOW_DELAY = 100
     HIDE_DELAY = 5000
@@ -56,7 +57,8 @@ class TkToolTip:
     # list of public parameters
     PARAMS = [
         "text", "state", "bg", "fg", "font", "borderwidth", "opacity", "relief",
-        "justify", "wraplength", "padx", "pady", "ipadx", "ipady", "origin", "anchor",
+        "justify", "wraplength", "padx", "pady", "ipadx", "ipady",
+        "origin", "widget_anchor", "tooltip_anchor",
         "follow_mouse", "show_delay", "hide_delay", "animation", "anim_in", "anim_out"
     ]
 
@@ -77,7 +79,8 @@ class TkToolTip:
     ipadx: int
     ipady: int
     origin: str
-    anchor: str
+    widget_anchor: str
+    tooltip_anchor: str
     follow_mouse: bool
     show_delay: int
     hide_delay: int
@@ -198,7 +201,7 @@ class TkToolTip:
         if self.state == "disabled" or not self._get_text() or self._suppress_until_leave:
             return
         if self.follow_mouse:
-            x, y = self._calculate_follow_position(event)  # ignores origin/anchor
+            x, y = self._calculate_follow_position(event)  # ignores origin/widget_anchor
             x, y = adjust_position_for_screen_bounds(self, x, y, event.x_root, event.y_root, "mouse")
         else:
             x, y = calculate_tooltip_position(self, event)
@@ -363,7 +366,7 @@ class TkToolTip:
                     assert value in ["normal", "disabled"], "Invalid state"
                 if name == 'opacity':
                     assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
-                setattr(self, name, value)
+                setattr(self, name if name != "anchor" else "widget_anchor", value)
         # Only set provided params
         else:
             for name, value in kwargs.items():
@@ -371,7 +374,7 @@ class TkToolTip:
                     assert value in ["normal", "disabled"], "Invalid state"
                 if name == 'opacity':
                     assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
-                setattr(self, name, value)
+                setattr(self, name if name != "anchor" else "widget_anchor", value)
 
 
     #endregion
