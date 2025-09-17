@@ -90,14 +90,19 @@ class TkToolTip:
 
     Methods
     -------
+
     bind(widget, **kwargs)
         Create and return a tooltip for widget.
+
     config(**kwargs)
         Update tooltip configuration.
+
     unbind()
         Remove all bindings.
+
     hide()
         Hide the tooltip immediately.
+
     """
 
 
