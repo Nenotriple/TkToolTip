@@ -20,7 +20,7 @@ from tkinter import Toplevel, Label, Widget, Event
 
 # Local
 from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
-from .animation_utils import animate_tip_window, SLIDE_ANIM_DISTANCE
+from .animation_utils import animate_tip_window
 
 
 #endregion
@@ -58,8 +58,8 @@ class TkToolTip:
     PARAMS = [
         "text", "state", "bg", "fg", "font", "borderwidth", "opacity", "relief",
         "justify", "wraplength", "padx", "pady", "ipadx", "ipady",
-        "origin", "widget_anchor", "tooltip_anchor",
-        "follow_mouse", "show_delay", "hide_delay", "animation", "anim_in", "anim_out"
+        "origin", "widget_anchor", "tooltip_anchor", "follow_mouse",
+        "show_delay", "hide_delay", "animation", "anim_in", "anim_out"
     ]
 
     # For IDEs and type checkers
@@ -240,7 +240,7 @@ class TkToolTip:
         self.tip_window.wm_geometry(f"+{x}+{y}")
         label = Label(self.tip_window)
         label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        self.update_tip_label(label)
+        self._update_tip_label(label)
         self._animate(show=True)
         self._schedule_auto_hide()
 
@@ -318,13 +318,14 @@ class TkToolTip:
         if not self.tip_window:
             return
         label: Label = self.tip_window.winfo_children()[0]
-        self.update_tip_label(label)
+        self._update_tip_label(label)
         x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
         self.tip_window.wm_geometry(f"+{x}+{y}")
         self.tip_window.attributes("-alpha", self.opacity)
 
 
-    def update_tip_label(self, label: Label) -> None:
+    def _update_tip_label(self, label: Label) -> None:
+        """Configure the given Label with the currently set class values"""
         try:
             label.config(
                 text=self._get_text(),
