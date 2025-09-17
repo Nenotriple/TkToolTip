@@ -289,7 +289,8 @@ class TkToolTip:
         if self.hide_id:
             try:
                 self.widget.after_cancel(self.hide_id)
-            except Exception:
+            except Exception as e:
+                print(f"ERROR: TkToolTip._cancel_auto_hide() - {e}")
                 pass
             self.hide_id = None
 
@@ -324,16 +325,19 @@ class TkToolTip:
 
 
     def update_tip_label(self, label: Label) -> None:
-        label.config(
-            text=self._get_text(),
-            background=self.bg,
-            foreground=self.fg,
-            font=self.font,
-            relief=self.relief,
-            borderwidth=self.borderwidth,
-            justify=self.justify,
-            wraplength=self.wraplength
-        )
+        try:
+            label.config(
+                text=self._get_text(),
+                background=self.bg,
+                foreground=self.fg,
+                font=self.font,
+                relief=self.relief,
+                borderwidth=self.borderwidth,
+                justify=self.justify,
+                wraplength=self.wraplength
+            )
+        except Exception as e:
+            print(f"ERROR: TkToolTip.update_tip_label() - {e}")
 
 
     def _get_text(self) -> str:
@@ -341,7 +345,8 @@ class TkToolTip:
         if callable(self.text):
             try:
                 return self.text()
-            except Exception:
+            except Exception as e:
+                print(f"ERROR: TkToolTip._get_text() - {e}")
                 return ""
         return self.text
 

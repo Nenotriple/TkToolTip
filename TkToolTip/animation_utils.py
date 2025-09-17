@@ -48,14 +48,16 @@ def animate_fade(tip_window: Toplevel, duration: int, start_alpha: float, end_al
         alpha = max(0.0, min(opacity, start_alpha + i * alpha_step))
         try:
             tip_window.attributes("-alpha", alpha)
-        except Exception:
+        except Exception as e:
+            print(f"ERROR: TkToolTip.animation_utils.animate_fade() - {e}")
             pass
         if i < steps:
             tip_window.after(10, step, i + 1)
         else:
             try:
                 tip_window.attributes("-alpha", max(0.0, min(opacity, end_alpha)))
-            except Exception:
+            except Exception as e:
+                print(f"ERROR: TkToolTip.animation_utils.animate_fade() - {e}")
                 pass
             if on_complete:
                 on_complete()
@@ -80,14 +82,16 @@ def animate_slide_fade(tip_window: Toplevel, duration: int, start_x: int, start_
             tip_window.wm_geometry(f"+{new_x}+{new_y}")
             alpha = max(0.0, min(opacity, start_alpha + da * i))
             tip_window.attributes("-alpha", alpha)
-        except Exception:
+        except Exception as e:
+            print(f"ERROR: TkToolTip.animation_utils.animate_slide_fade() - {e}")
             pass
         if i < steps:
             tip_window.after(10, step, i + 1)
         else:
             try:
                 tip_window.attributes("-alpha", max(0.0, min(opacity, end_alpha)))
-            except Exception:
+            except Exception as e:
+                print(f"ERROR: TkToolTip.animation_utils.animate_slide_fade() - {e}")
                 pass
             if on_complete:
                 on_complete()
