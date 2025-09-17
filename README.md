@@ -2,9 +2,23 @@
 
 Bind tooltips to any widget that inherits from `tkinter.Widget`, including custom widgets.
 
-![Python 3.10+](https://img.shields.io/badge/git-Python_3.10%2B-green)
+## Features
+
+- Lightweight binding API: attach a tooltip with `Tip.bind(widget, ...)`.
+- Works with any `tkinter.Widget`, including custom widgets.
+- Live reconfiguration via `tooltip.config(...)` for text, style, timing, and behavior.
+- Positioning options: `origin` (`mouse` or `widget`), `widget_anchor`, and `tooltip_anchor` (nine positions).
+- Optional `follow_mouse` mode to track the cursor while hovering.
+- Appearance controls: background, foreground, `font`, `borderwidth`, `relief`, `justify`, padding.
+- Wrapping support via `wraplength` and adjustable padding (`padx`, `pady`, `ipadx`, `ipady`).
+- Timing controls: `show_delay`, `hide_delay`, and auto-hide behavior.
+- Animations: `fade`, `slide`, or `none` with adjustable `anim_in` and `anim_out`.
+- Opacity control (0.0–1.0) for translucent tooltips.
+- Respects screen bounds and avoids mouse overlap when positioned from the pointer.
 
 ## Install
+
+![Python 3.10+](https://img.shields.io/badge/git-Python_3.10%2B-green)
 
 1. Install from the repository:
 
@@ -25,7 +39,7 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
 
 ## Usage
 
-Tooltips must be associated with a widget. There are two common patterns.
+Tooltips must be bound with a widget. There are two common patterns.
 
 ### Bind a tooltip directly
 
@@ -40,20 +54,6 @@ tooltip = Tip.bind(widget, text="example")
 tooltip.config(text="Example!")
 ```
 
-## Features
-
-- Lightweight binding API: attach a tooltip with `Tip.bind(widget, ...)`.
-- Works with any `tkinter.Widget`, including custom widgets.
-- Live reconfiguration via `tooltip.config(...)` for text, style, timing, and behavior.
-- Positioning options: `origin` (`mouse` or `widget`), `widget_anchor`, and `tooltip_anchor` (nine positions).
-- Optional `follow_mouse` mode to track the cursor while hovering.
-- Appearance controls: background, foreground, `font`, `borderwidth`, `relief`, `justify`, padding.
-- Wrapping support via `wraplength` and adjustable padding (`padx`, `pady`, `ipadx`, `ipady`).
-- Timing controls: `show_delay`, `hide_delay`, and auto-hide behavior.
-- Animations: `fade`, `slide`, or `none` with adjustable `anim_in` and `anim_out`.
-- Opacity control (0.0–1.0) for translucent tooltips.
-- Respects screen bounds and avoids mouse overlap when positioned from the pointer.
-
 ## Parameters
 
 | Parameter        | Type             | Default                          | Possible Values                                                                         | Description                                                         |
@@ -62,7 +62,7 @@ tooltip.config(text="Example!")
 | `text`           | `str`            | `""`                             | Any string                                                                              | The content displayed inside the tooltip.                           |
 | `state`          | `str`            | `"normal"`                       | `"normal"`, `"disabled"`                                                                | Controls whether the tooltip is active.                             |
 | `bg`             | `str`            | `"#ffffee"`                    | Valid color name / hex                                                                  | Tooltip background color.                                           |
-| `fg`             | `str`            | `"black"`                        | Valid color name / hex                                                                  | Text color used in the tooltip.                                     |
+| `fg`             | `str`            | `"black"`                        | Valid color name / hex                                                                  | Tooltip text color.                                                 |
 | `font`           | `tuple`          | `("TkDefaultFont", 8, "normal")` | `(family, size, style)`                                                                 | Font settings for the tooltip text.                                 |
 | `borderwidth`    | `int`            | `1`                              | Any integer ≥ 0                                                                         | Thickness of the tooltip border.                                    |
 | `opacity`        | `float`          | `1.0`                            | `0.0` to `1.0`                                                                          | Tooltip transparency (0.0 = transparent, 1.0 = opaque).             |
@@ -92,6 +92,21 @@ Set `animation` to control how the tooltip appears and disappears:
 - `none`: instantly shows and hides with no transitions.
 
 Use `anim_in` and `anim_out` to tune durations (milliseconds).
+
+## Default Override
+
+Class-level default parameter values can be overwritten by redefining them prior to tooltip creation.
+This makes it simple to setup many tooltips without needing to repeat the same parameter values.
+
+Parameters can always be adjusted on a per-tooltip basis when binding or configuring the tooltip.
+
+```Python
+from TkToolTip import TkToolTip as Tip
+
+Tip.SHOW_DELAY = 500
+Tip.HIDE_DELAY = 10000
+Tip.ANIMATION = "slide"
+```
 
 ## Project structure
 
