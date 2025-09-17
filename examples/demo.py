@@ -12,6 +12,7 @@ Showcases all features of the TkToolTip module in an interactive GUI.
 # Standard
 import os
 import sys
+import time
 
 # Standard - GUI
 import tkinter as tk
@@ -69,7 +70,7 @@ def setup_ui(root):
     build_demo_sections(container)
 
 
-def setup_scroll_bindings(canvas, container, window_id):
+def setup_scroll_bindings(canvas: tk.Canvas, container: ttk.Frame, window_id: int):
     def configure_scrollregion(event):
         canvas.configure(scrollregion=canvas.bbox('all'))
         canvas.itemconfig(window_id, width=canvas.winfo_width())
@@ -142,7 +143,7 @@ def build_anchor_section(parent):
     cb_frame = ttk.Frame(container)
     cb_frame.pack(pady=(12, 0))
     ttk.Label(cb_frame, text="tooltip_anchor:").pack(side='left', padx=(0, 6))
-    tooltip_anchor_var = tk.StringVar(value='center')
+    tooltip_anchor_var = tk.StringVar(value='nw')
     anchor_cb = ttk.Combobox(cb_frame, textvariable=tooltip_anchor_var, values=anchor_choices, state='readonly', width=10)
     anchor_cb.pack(side='left')
 
@@ -163,7 +164,7 @@ def build_follow_section(parent):
     canvas.pack(fill='both', expand=True, padx=12, pady=12)
     canvas.create_text(10, 10, text="Move the mouse here", fill='white', font=('Segoe UI', 12), anchor='nw')
     # Bind a tooltip to the canvas that follows the mouse
-    # A larger padding prevents mouse overlap issues
+    # A larger, slightly offset padding prevents mouse overlap issues
     Tip.bind(canvas, text="The tooltip tracks the cursor while over the canvas.", follow_mouse=True, padx=8, pady=12, show_delay=50, hide_delay=10000)
 
 
@@ -175,7 +176,6 @@ def build_callback_text_section(parent):
     callback_btn = ttk.Button(section_frame, text="Callback Text")
     callback_btn.pack(fill='x', pady=8, ipadx=10, ipady=10)
 
-    import time
     def dynamic_text():
         # Returns the current time as tooltip text
         return f"Current time: {time.strftime('%H:%M:%S')}"
@@ -337,7 +337,7 @@ def create_timing_group(parent, vars):
     create_labeled_spinbox(group, 'Anim Out:', vars['anim_out'], 0, 2000, 25)
 
 
-def setup_variable_tracing(vars, tooltip, args_var=None):
+def setup_variable_tracing(vars: dict[str, tk.Variable], tooltip: Tip, args_var: tk.Variable = None):
     # This function connects all config controls to the tooltip, so changes update it live.
     # It demonstrates how TkToolTip's config method can be used to update tooltip properties dynamically.
     # Every time a control changes, the tooltip is updated in real time, showing the effect of each parameter.
@@ -443,7 +443,7 @@ def create_labeled_entry(parent, label_text, textvariable):
     return create_labeled_widget(parent, label_text, ttk.Entry, textvariable=textvariable)
 
 
-def create_labeled_combobox(parent, label_text, textvariable, values, readonly=False, width=None):
+def create_labeled_combobox(parent, label_text: str, textvariable: tk.Variable, values: list[str], readonly: bool = False, width: int | None = None):
     options = {'textvariable': textvariable, 'values': values}
     if readonly:
         options['state'] = 'readonly'
@@ -460,7 +460,7 @@ def create_labeled_checkbutton(parent, label_text, variable):
     return create_labeled_widget(parent, label_text, ttk.Checkbutton, variable=variable)
 
 
-def create_color_field(parent, label_text, color_var):
+def create_color_field(parent, label_text: str, color_var: tk.Variable):
     row_frame = ttk.Frame(parent)
     row_frame.pack(fill='x', pady=3)
     label = ttk.Label(row_frame, text=label_text, width=14, anchor='w')
@@ -473,7 +473,7 @@ def create_color_field(parent, label_text, color_var):
     return entry
 
 
-def create_color_swatch(parent, color_var):
+def create_color_swatch(parent, color_var: tk.Variable):
     swatch = tk.Canvas(parent, width=20, height=20, highlightthickness=1, highlightbackground='#888', bd=0)
     swatch.pack(side='left')
     swatch_rect = swatch.create_rectangle(1, 1, 19, 19, outline='', fill=color_var.get())
@@ -489,7 +489,7 @@ def create_color_swatch(parent, color_var):
     return swatch
 
 
-def pick_color(color_var, label_text):
+def pick_color(color_var: tk.Variable, label_text: str):
     initial_color = color_var.get() or '#ffffff'
     result = colorchooser.askcolor(color=initial_color, title=f"Select {label_text.strip(':')}")
     if result and result[1]:
