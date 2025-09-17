@@ -185,8 +185,8 @@ class TkToolTip:
         if self._suppress_until_leave:
             self._cancel_tip()
             return
-        # If following mouse and already visible, just move the tip
-        if self.follow_mouse and self.tip_window:
+        # If follow_mouse is active and origin is not widget, reposition to pointer
+        if self.follow_mouse and self.origin != "widget" and self.tip_window:
             self._cancel_tip()
             x, y = self._calculate_follow_position(event)
             self._move_tip(x, y)
@@ -200,8 +200,9 @@ class TkToolTip:
         """Display the tooltip at the specified position."""
         if self.state == "disabled" or not self._get_text() or self._suppress_until_leave:
             return
-        if self.follow_mouse:
-            x, y = self._calculate_follow_position(event)  # ignores origin/widget_anchor
+        # If follow_mouse is True and origin is not widget, use mouse position
+        if self.follow_mouse and self.origin != "widget":
+            x, y = self._calculate_follow_position(event)
             x, y = adjust_position_for_screen_bounds(self, x, y, event.x_root, event.y_root, "mouse")
         else:
             x, y = calculate_tooltip_position(self, event)
