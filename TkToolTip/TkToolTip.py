@@ -113,9 +113,15 @@ class TkToolTip:
 
 
     @classmethod
-    def bind(cls, widget: Widget, **kwargs: Any) -> 'TkToolTip':
+    def bind(cls: TkToolTip, widget: Widget, **kwargs: Any) -> 'TkToolTip':
         """Binds a tooltip for widget; kwargs limited to PARAMS."""
         return cls(widget, **kwargs)
+
+
+    @classmethod
+    def create(cls: TkToolTip, widget: Widget, **kwargs: Any) -> 'TkToolTip':
+        """Alias for bind()."""
+        return cls.bind(widget, **kwargs)
 
 
     def unbind(self) -> None:
@@ -145,6 +151,11 @@ class TkToolTip:
             # If hide_delay changed, reschedule auto-hide
             if 'hide_delay' in kwargs:
                 self._schedule_auto_hide()
+
+
+    def configure(self, **kwargs: Any) -> None:
+        """Alias for config()."""
+        self.config(**kwargs)
 
 
     def hide(self, event: Optional[Event] = None) -> None:

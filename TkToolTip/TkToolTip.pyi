@@ -10,17 +10,8 @@ class TkToolTip:
     """
     Attach a Tooltip to any tkinter widget.
 
-    Parameters
-    ----------
-    widget : tkinter.Widget, optional
-        The widget to attach the tooltip to
-
-    text : str or callable, optional
-        Tooltip text or a function returning text ("")
-
-    state : str, optional
-        Tooltip state, "normal" or "disabled" ("normal")
-
+    STANDARD OPTIONS (inherited from Tk.Label)
+    -----------------------------------------
     bg : str, optional
         Background color ("#ffffee")
 
@@ -32,9 +23,6 @@ class TkToolTip:
 
     borderwidth : int, optional
         Border width (1)
-
-    opacity : float, optional
-        Opacity of the tooltip (1.0)
 
     relief : str, optional
         Border style ("solid")
@@ -56,6 +44,20 @@ class TkToolTip:
 
     ipady : int, optional
         Vertical internal padding (2)
+
+    WIDGET-SPECIFIC OPTIONS (unique to TkToolTip)
+    ---------------------------------------------
+    widget : tkinter.Widget, optional
+        The widget to attach the tooltip to
+
+    text : str or callable, optional
+        Tooltip text or a function returning text ("")
+
+    state : str, optional
+        Tooltip state, "normal" or "disabled" ("normal")
+
+    opacity : float, optional
+        Opacity of the tooltip (1.0)
 
     origin : str, optional
         Origin point of the tooltip, "mouse" or "widget" ("mouse")
@@ -94,7 +96,13 @@ class TkToolTip:
     bind(widget, **kwargs)
         Create and return a tooltip for widget.
 
+    create(widget, **kwargs)
+        Create and return a tooltip for widget.
+
     config(**kwargs)
+        Update tooltip configuration.
+
+    configure(**kwargs)
         Update tooltip configuration.
 
     unbind()
@@ -227,7 +235,67 @@ class TkToolTip:
     ) -> TkToolTip: ...
 
 
+    @classmethod
+    def create(
+        cls,
+        widget: Widget,
+        *,
+        text: Union[str, Callable[[], str]] = "",
+        state: Literal["normal", "disabled"] = "normal",
+        bg: str = "#ffffee",
+        fg: str = "black",
+        font: Optional[Tuple[str, int, str]] = ("TkDefaultFont", 8, "normal"),
+        borderwidth: int = 1,
+        opacity: float = 1.0,
+        relief: str = "solid",
+        justify: str = "center",
+        wraplength: int = 0,
+        padx: int = 1,
+        pady: int = 1,
+        ipadx: int = 2,
+        ipady: int = 2,
+        origin: str = "mouse",
+        widget_anchor: str = "nw",
+        tooltip_anchor: str = "nw",
+        follow_mouse: bool = False,
+        show_delay: int = 100,
+        hide_delay: int = 5000,
+        animation: str = "fade",
+        anim_in: int = 75,
+        anim_out: int = 50
+    ) -> TkToolTip: ...
+
+
     def config(
+        self,
+        *,
+        text: Optional[Union[str, Callable[[], str]]] = None,
+        state: Optional[Literal["normal", "disabled"]] = None,
+        bg: Optional[str] = None,
+        fg: Optional[str] = None,
+        font: Optional[Tuple[str, int, str]] = None,
+        borderwidth: Optional[int] = None,
+        opacity: Optional[float] = None,
+        relief: Optional[str] = None,
+        justify: Optional[str] = None,
+        wraplength: Optional[int] = None,
+        padx: Optional[int] = None,
+        pady: Optional[int] = None,
+        ipadx: Optional[int] = None,
+        ipady: Optional[int] = None,
+        origin: Optional[str] = None,
+        widget_anchor: Optional[str] = None,
+        tooltip_anchor: Optional[str] = None,
+        follow_mouse: Optional[bool] = None,
+        show_delay: Optional[int] = None,
+        hide_delay: Optional[int] = None,
+        animation: Optional[str] = None,
+        anim_in: Optional[int] = None,
+        anim_out: Optional[int] = None
+    ) -> None: ...
+
+
+    def configure(
         self,
         *,
         text: Optional[Union[str, Callable[[], str]]] = None,
