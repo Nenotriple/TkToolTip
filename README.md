@@ -145,16 +145,20 @@ Tip.ANIMATION = "slide"
 ## Project Structure
 
 ```text
-TkToolTip
-  │
-  ├── TkToolTip.py         # Tooltip implementation
-  ├── position_utils.py    # Position calculations
-  ├── animation_utils.py   # Animation logic
-  ├── TkToolTip.pyi        # Type stubs for IDEs / type checking
-  │
-examples
-  │
-  └── demo.py              # Comprehensive GUI demo
+TkToolTip/
+  ├── TkToolTip.py           # Tooltip implementation
+  ├── TkToolTip.pyi          # Type stubs for IDEs / type checking
+  ├── position_utils.py      # Position calculations
+  ├── animation_utils.py     # Animation logic
+  └── __init__.py            # Package init
+examples/
+  └── demo.py                # Comprehensive GUI demo
+tests/
+  └── test_tktooltip.py      # Unit tests
+setup.py                     # Packaging setup
+README.md                    # Documentation
+LICENSE                      # License
+CHANGELOG.md                 # Changelog
 ```
 
 ## License
