@@ -28,6 +28,8 @@ from .animation_utils import animate_tip_window
 
 
 class TkToolTip:
+
+
     #region Defaults
     # Class-level default parameters
     TEXT = ""
@@ -166,9 +168,10 @@ class TkToolTip:
 
 
     #endregion
+    #region Internal methods
+
+
     #region Bindings
-
-
     def _bind_widget(self) -> None:
         """Setup event bindings for the widget."""
         self.widget.bind('<Motion>', self._schedule_show_tip, add="+")
@@ -395,5 +398,6 @@ class TkToolTip:
                 setattr(self, name if name != "anchor" else "widget_anchor", value)
 
 
+    #endregion
     #endregion
 #endregion

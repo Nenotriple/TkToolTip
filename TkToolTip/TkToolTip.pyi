@@ -1,9 +1,15 @@
-# Typing
+#region Imports
+
+
 from __future__ import annotations
 from typing import Optional, Tuple, Literal, Callable, Union
 
 # Standard - GUI
 from tkinter import Widget, Toplevel, Event
+
+
+#endregion
+#region TkToolTip
 
 
 class TkToolTip:
@@ -114,6 +120,9 @@ class TkToolTip:
     """
 
 
+#region Class Setup
+
+
     # Class-level defaults
     TEXT: str
     STATE: Literal["normal", "disabled"]
@@ -202,6 +211,10 @@ class TkToolTip:
         anim_in: int = TkToolTip.ANIM_IN,
         anim_out: int = TkToolTip.ANIM_OUT
     ) -> None: ...
+
+
+#endregion
+#region Public API
 
 
     @classmethod
@@ -330,4 +343,70 @@ class TkToolTip:
     def hide(self, event: Event | None = None) -> None: ...
 
 
+#endregion
+#region Internal methods
+
+
+    def _bind_widget(self) -> None: ...
+
+
     def _get_text(self) -> str: ...
+
+
+    def _on_leave(self, event: Event | None = None) -> None: ...
+
+
+    def _schedule_show_tip(self, event: Event | None = None) -> None: ...
+
+
+    def _show_tip(self, event: Event | None = None) -> None: ...
+
+
+    def _schedule_auto_hide(self) -> None: ...
+
+
+    def _auto_hide(self) -> None: ...
+
+
+    def _suppress_until_leave(self) -> None: ...
+
+
+    def _update_tip_label(self) -> None: ...
+
+
+    def _animate(self) -> None: ...
+
+
+    def _calculate_follow_position(self, event: Event) -> Tuple[int, int]: ...
+
+
+    def _current_follow_position(self) -> Tuple[int, int]: ...
+
+
+    def _move_tip(self, x: int, y: int) -> None: ...
+
+
+    def _create_tip_window(self, x: int, y: int) -> None: ...
+
+
+    def _remove_tip_window(self) -> None: ...
+
+
+    def _hide_tip(self) -> None: ...
+
+
+    def _cancel_tip(self) -> None: ...
+
+
+    def _cancel_auto_hide(self) -> None: ...
+
+
+    def _update_visible_tooltip(self) -> None: ...
+
+
+    def _update_tip_label(self, label: Widget) -> None: ...
+
+
+#endregion
+#endregion
+
