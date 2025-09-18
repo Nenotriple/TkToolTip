@@ -32,7 +32,7 @@ class TkToolTip:
     # Class-level default parameters
     TEXT = ""
     STATE = "normal"
-    BG = "#ffffee"
+    BG = "white"
     FG = "black"
     FONT: Optional[Tuple[str, int, str]]  = ("TkDefaultFont", 8, "normal")
     BORDERWIDTH = 1

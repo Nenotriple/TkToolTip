@@ -13,7 +13,7 @@ class TkToolTip:
     STANDARD OPTIONS (inherited from Tk.Label)
     -----------------------------------------
     bg : str, optional
-        Background color ("#ffffee")
+        Background color ("white")
 
     fg : str, optional
         Foreground (text) color ("black")
@@ -211,7 +211,7 @@ class TkToolTip:
         *,
         text: Union[str, Callable[[], str]] = "",
         state: Literal["normal", "disabled"] = "normal",
-        bg: str = "#ffffee",
+        bg: str = "white",
         fg: str = "black",
         font: Optional[Tuple[str, int, str]] = ("TkDefaultFont", 8, "normal"),
         borderwidth: int = 1,
@@ -242,7 +242,7 @@ class TkToolTip:
         *,
         text: Union[str, Callable[[], str]] = "",
         state: Literal["normal", "disabled"] = "normal",
-        bg: str = "#ffffee",
+        bg: str = "white",
         fg: str = "black",
         font: Optional[Tuple[str, int, str]] = ("TkDefaultFont", 8, "normal"),
         borderwidth: int = 1,
