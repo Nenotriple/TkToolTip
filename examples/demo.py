@@ -204,7 +204,8 @@ def build_dynamic_section(parent):
     args_var.trace_add('write', update_tooltip)
     # Control panel lets users change all tooltip options
     control_panel = create_control_panel(section_frame)
-    setup_configuration_groups(control_panel, dynamic_tip, args_var)
+    _, reset_callback = setup_configuration_groups(control_panel, dynamic_tip, args_var)
+    create_reset_controls(args_frame, reset_callback)
 
 
 def create_arg_entry(args_var, args_frame):
@@ -242,6 +243,12 @@ def create_control_panel(parent):
     return control_frame
 
 
+def create_reset_controls(parent, reset_callback):
+    reset_button = ttk.Button(parent, text="Reset to Defaults", command=reset_callback)
+    reset_button.pack(side='left', padx=(4, 0))
+    Tip.bind(reset_button, text="Restore the configuration panel to the class defaults.", show_delay=300)
+
+
 def setup_configuration_groups(control_panel, tooltip, args_var=None):
     vars = create_configuration_vars()
     create_content_group(control_panel, vars)
@@ -250,7 +257,14 @@ def setup_configuration_groups(control_panel, tooltip, args_var=None):
     create_position_group(control_panel, vars)
     create_border_group(control_panel, vars)
     create_timing_group(control_panel, vars)
+    defaults = {name: var.get() for name, var in vars.items()}
+
+    def reset_to_defaults():
+        for name, var in vars.items():
+            var.set(defaults[name])
+
     setup_variable_tracing(vars, tooltip, args_var)
+    return vars, reset_to_defaults
 
 
 #endregion
