@@ -19,7 +19,7 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
 - Respects screen bounds and avoids mouse overlap when positioned from the pointer.
 - Multi-item tooltips: pass `list[str]` to render multiple lines with separators; supports per-item alignment flags.
 
-## Install
+## Installation
 
 1. Install from the repository:
 
@@ -42,13 +42,13 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
 
 Tooltips must be bound to a widget. Two common patterns:
 
-### Bind a tooltip directly
+### Bind a Tooltip Directly
 
 ```python
 Tip.bind(widget, text="example")
 ```
 
-### Bind and store a tooltip for later configuration
+### Bind and Store a Tooltip for Later Configuration
 
 ```python
 tooltip = Tip.bind(widget, text="example")
@@ -73,7 +73,7 @@ root.mainloop()
 
 ## Parameters
 
-### Standard options (inherited from `tkinter.Label`)
+### Standard Options (inherited from `tkinter.Label`)
 
 > These options control the appearance and layout of the tooltip label itself.
 
@@ -91,7 +91,7 @@ root.mainloop()
 | `ipadx`       | `int`   | `2`                              | Any                                                    | Inner horizontal padding.            |
 | `ipady`       | `int`   | `2`                              | Any                                                    | Inner vertical padding.              |
 
-### Widget-specific options (unique to TkToolTip)
+### Widget-Specific Options (Unique to TkToolTip)
 
 > Control behavior, positioning, animation, and dynamic features.
 
@@ -111,17 +111,7 @@ root.mainloop()
 | `anim_in`        | `int`                            | `75`       | ≥ 0 (ms)                                                          | Enter animation duration.               |
 | `anim_out`       | `int`                            | `50`       | ≥ 0 (ms)                                                          | Exit animation duration.                |
 
-## Animation Styles
-
-Set `animation` to control appearance and disappearance:
-
-- `fade` (default): cross-fades from 0 → target opacity.
-- `slide`: slides upward a few pixels while fading in; reverses when hiding.
-- `none`: instant show/hide.
-
-Use `anim_in` and `anim_out` to tune durations (milliseconds).
-
-## Default Override
+## Default Overrides
 
 Class-level defaults can be changed before creating tooltips. All subsequently created tooltips inherit the new values unless explicitly overridden.
 
@@ -136,14 +126,17 @@ Tip.ANIMATION = "slide"
 # Tooltips created after this use these defaults unless overridden
 ```
 
-## API Reference (Essentials)
+## Animation Styles
 
-- `Tip.bind(widget, **options)` / `Tip.create(widget, **options)` → `TkToolTip`
-- `tip.config(**options)` / `tip.configure(**options)`
-- `tip.hide()`
-- `tip.unbind()`
+Set `animation` to control appearance and disappearance:
 
-## Multi-item tooltips and per-item flags
+- `fade` (default): cross-fades from 0 → target opacity.
+- `slide`: slides upward a few pixels while fading in; reverses when hiding.
+- `none`: instant show/hide.
+
+Use `anim_in` and `anim_out` to tune durations (milliseconds).
+
+## Multi-Item Tooltips and Per-Item Flags
 
 Pass a list of strings to render multiple items. A thin separator is added between items. When a list is used, the container Frame holds the border/relief; individual Labels are borderless.
 
@@ -168,10 +161,17 @@ Tip.bind(widget, text=[
 ])
 ```
 
-Notes:
+> Note:
+>
+> - Flags can be combined, e.g., `[r][a=ne]`.
+> - For single-string text, a single `Label` is used and the border/relief are applied directly to it.
 
-- Flags can be combined, e.g. `[r][a=ne]`.
-- For single-string text, a single Label is used and the border/relief are applied directly to it.
+## API Reference (Essentials)
+
+- `Tip.bind(widget, **options)` / `Tip.create(widget, **options)` → `TkToolTip`
+- `tip.config(**options)` / `tip.configure(**options)`
+- `tip.hide()`
+- `tip.unbind()`
 
 ## Project Structure
 
