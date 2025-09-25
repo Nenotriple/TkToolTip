@@ -9,7 +9,7 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(_TESTS_DIR, '..'))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from TkToolTip import TkToolTip
+from TkToolTip.TkToolTip import TkToolTip
 
 
 class TkToolTipTestCase(unittest.TestCase):
@@ -179,13 +179,13 @@ class TkToolTipTestCase(unittest.TestCase):
         self.assertFalse(tip._suppress_until_leave)
 
 
-    def test_update_tip_label_and_error_handling(self):
+    def test_build_tooltip_content_and_error_handling(self):
         tip = TkToolTip.bind(self.btn, text="label")
         class DummyLabel:
             def config(self, **kwargs):
                 raise Exception("fail")
         label = DummyLabel()
-        tip._update_tip_label(label)  # Should print error but not raise
+        tip._build_tooltip_content(label)  # Should print error but not raise
 
 
     def test_show_tip_with_empty_text(self):
