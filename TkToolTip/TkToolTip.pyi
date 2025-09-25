@@ -19,103 +19,172 @@ class TkToolTip:
     STANDARD OPTIONS (inherited from Tk.Label)
     -----------------------------------------
     bg : str, optional
-        Background color ("white")
+        - Background color ("white")
+
+    ---
 
     fg : str, optional
-        Foreground (text) color ("black")
+        - Foreground (text) color ("black")
+
+    ---
 
     font : tuple, optional
-        Font of the text (("TkDefaultFont", 8, "normal"))
+        - Font of the text (("TkDefaultFont", 8, "normal"))
+
+    ---
 
     borderwidth : int, optional
-        Border width (1)
+        - Border width (1)
+
+    ---
 
     relief : str, optional
-        Border style ("solid")
+        - Border style ("solid")
+
+    ---
 
     justify : str, optional
-        Text justification ("center")
+        - Text justification ("center")
+
+    ---
 
     wraplength : int, optional
-        Maximum line width for text wrapping (0 disables wrapping)
+        - Maximum line width for text wrapping (0 disables wrapping)
+
+    ---
 
     padx : int, optional
-        X-offset of the tooltip from the origin (1)
+        - X-offset of the tooltip from the origin (1)
+
+    ---
 
     pady : int, optional
-        Y-offset of the tooltip from the origin (1)
+        - Y-offset of the tooltip from the origin (1)
+
+    ---
 
     ipadx : int, optional
-        Horizontal internal padding (2)
+        - Horizontal internal padding (2)
+
+    ---
 
     ipady : int, optional
-        Vertical internal padding (2)
+        - Vertical internal padding (2)
+
+    ---
 
     WIDGET-SPECIFIC OPTIONS (unique to TkToolTip)
     ---------------------------------------------
     widget : tkinter.Widget, optional
-        The widget to attach the tooltip to
+        - The widget to attach the tooltip to
 
-    text : str or callable, optional
-        Tooltip text or a function returning text ("")
+    ---
+
+    text : str | list[str] | callable, optional
+        - Tooltip text (single string or list of strings), or a function returning either ("")
+          - If a callable is provided, it should return either a string or a list of strings.
+          - If text is a string: create a single Label with border/relief
+          - If text is a list: create a Frame (border/relief on Frame only) and a Label per item
+
+        - Per-item alignment flags (only for list items):
+          - [l] or [left]    -> justify=left,   anchor=w
+          - [c] or [center]  -> justify=center, anchor=center
+          - [r] or [right]   -> justify=right,  anchor=e
+          - [a=<anchor>]     -> explicit anchor override (n, ne, e, se, s, sw, w, nw, center)
+
+        Flags can be combined at the very start, e.g. "[r][a=ne] Item text".
+
+    ---
 
     state : str, optional
-        Tooltip state, "normal" or "disabled" ("normal")
+        - Tooltip state, "normal" or "disabled" ("normal")
+
+    ---
 
     opacity : float, optional
-        Opacity of the tooltip (1.0)
+        - Opacity of the tooltip (1.0)
+
+    ---
 
     origin : str, optional
-        Origin point of the tooltip, "mouse" or "widget" ("mouse")
+        - Origin point of the tooltip, "mouse" or "widget" ("mouse")
+
+    ---
 
     widget_anchor : str, optional
-        Specifies the point on the widget used for alignment when origin is "widget" ("nw").
-        Valid values are combinations of n, e, s, w. Special values "center" or "c"
-        center the tooltip. "nesw" also treated as center.
+        - Specifies the point on the widget used for alignment when origin is "widget" ("nw").
+        - Valid values are combinations of n, e, s, w. Special values "center" or "c"
+        - center the tooltip. "nesw" also treated as center.
+
+    ---
 
     tooltip_anchor : str, optional
-        Specifies the point on the tooltip used for alignment when origin is "widget" ("nw").
-        Valid values are combinations of n, e, s, w. Special values "center" or "c"
-        center the tooltip. "nesw" also treated as center.
+        - Specifies the point on the tooltip used for alignment when origin is "widget" ("nw").
+        - Valid values are combinations of n, e, s, w. Special values "center" or "c"
+        - center the tooltip. "nesw" also treated as center.
+
+    ---
 
     follow_mouse : bool, optional
-        When True, tooltip follows the mouse while hovering (overrides origin/widget_anchor).
+        - When True, tooltip follows the mouse while hovering (overrides origin/widget_anchor).
+
+    ---
 
     show_delay : int, optional
-        Delay before showing in ms (100)
+        - Delay before showing in ms (100)
+
+    ---
 
     hide_delay : int, optional
-        Auto-hide after this many ms (5000). Suppresses re-show until leave/enter.
+        - Auto-hide after this many ms (5000). Suppresses re-show until leave/enter.
+
+    ---
 
     animation : str, optional
-        Animation style: "fade", "slide", or "none" ("fade")
+        - Animation style: "fade", "slide", or "none" ("fade")
+
+    ---
 
     anim_in : int, optional
-        Animation duration entering in ms (75)
+        - Animation duration entering in ms (75)
+
+    ---
 
     anim_out : int, optional
-        Animation duration exiting in ms (50)
+        - Animation duration exiting in ms (50)
+
+    ---
 
     Methods
     -------
 
     bind(widget, **kwargs)
-        Create and return a tooltip for widget.
+        - Create and return a tooltip for widget.
+
+    ---
 
     create(widget, **kwargs)
-        Create and return a tooltip for widget.
+        - Create and return a tooltip for widget.
+
+    ---
 
     config(**kwargs)
-        Update tooltip configuration.
+        - Update tooltip configuration.
+
+    ---
 
     configure(**kwargs)
-        Update tooltip configuration.
+        - Update tooltip configuration.
+
+    ---
 
     unbind()
-        Remove all bindings.
+        - Remove all bindings.
+
+    ---
 
     hide()
-        Hide the tooltip immediately.
+        - Hide the tooltip immediately.
 
     """
 
@@ -149,13 +218,10 @@ class TkToolTip:
     ANIM_OUT: int
     PARAMS: list[str]
 
-    # Magic numbers
-    SLIDE_DISTANCE = int
-
 
     # Instance attributes (after initialization)
     widget: Optional[Widget]
-    text: Union[str, Callable[[], str]]
+    text: Union[str, list[str], Callable[[], Union[str, list[str]]]]
     state: Literal["normal", "disabled"]
     bg: str
     fg: str
@@ -181,13 +247,14 @@ class TkToolTip:
     tip_window: Optional[Toplevel]
     show_after_id: Optional[int]
     hide_id: Optional[int]
+    _suppress_until_leave: bool
 
 
     def __init__(
         self,
         widget: Optional[Widget] = None,
         *,
-        text: Union[str, Callable[[], str]] = "",
+        text: Union[str, list[str], Callable[[], Union[str, list[str]]]] = "",
         state: Literal["normal", "disabled"] = TkToolTip.STATE,
         bg: str = TkToolTip.BG,
         fg: str = TkToolTip.FG,
@@ -222,7 +289,7 @@ class TkToolTip:
         cls,
         widget: Widget,
         *,
-        text: Union[str, Callable[[], str]] = "",
+        text: Union[str, list[str], Callable[[], Union[str, list[str]]]] = "",
         state: Literal["normal", "disabled"] = "normal",
         bg: str = "white",
         fg: str = "black",
@@ -253,7 +320,7 @@ class TkToolTip:
         cls,
         widget: Widget,
         *,
-        text: Union[str, Callable[[], str]] = "",
+        text: Union[str, list[str], Callable[[], Union[str, list[str]]]] = "",
         state: Literal["normal", "disabled"] = "normal",
         bg: str = "white",
         fg: str = "black",
@@ -282,7 +349,7 @@ class TkToolTip:
     def config(
         self,
         *,
-        text: Optional[Union[str, Callable[[], str]]] = None,
+        text: Optional[Union[str, list[str], Callable[[], Union[str, list[str]]]]] = None,
         state: Optional[Literal["normal", "disabled"]] = None,
         bg: Optional[str] = None,
         fg: Optional[str] = None,
@@ -311,7 +378,7 @@ class TkToolTip:
     def configure(
         self,
         *,
-        text: Optional[Union[str, Callable[[], str]]] = None,
+        text: Optional[Union[str, list[str], Callable[[], Union[str, list[str]]]]] = None,
         state: Optional[Literal["normal", "disabled"]] = None,
         bg: Optional[str] = None,
         fg: Optional[str] = None,
@@ -350,7 +417,7 @@ class TkToolTip:
     def _bind_widget(self) -> None: ...
 
 
-    def _get_text(self) -> str: ...
+    def _get_text(self) -> Union[str, list[str]]: ...
 
 
     def _on_leave(self, event: Event | None = None) -> None: ...
@@ -368,13 +435,10 @@ class TkToolTip:
     def _auto_hide(self) -> None: ...
 
 
-    def _suppress_until_leave(self) -> None: ...
+    def _build_tooltip_content(self, parent: Toplevel) -> None: ...
 
 
-    def _update_tip_label(self) -> None: ...
-
-
-    def _animate(self) -> None: ...
+    def _animate(self, show: bool) -> None: ...
 
 
     def _calculate_follow_position(self, event: Event) -> Tuple[int, int]: ...
@@ -404,7 +468,7 @@ class TkToolTip:
     def _update_visible_tooltip(self) -> None: ...
 
 
-    def _update_tip_label(self, label: Widget) -> None: ...
+    def _parse_item_flags(self, text: str) -> Tuple[str, Optional[str], Optional[str]]: ...
 
 
 #endregion

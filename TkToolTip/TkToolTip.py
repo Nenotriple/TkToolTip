@@ -16,7 +16,9 @@ from __future__ import annotations
 from typing import Optional, Tuple, Any, Callable, Dict, Union
 
 # Standard - GUI
-from tkinter import Toplevel, Label, Widget, Event
+from tkinter import Toplevel, Label, Frame, Widget, Event
+from tkinter.ttk import Separator
+import re  # added
 
 # Local
 from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
@@ -66,7 +68,7 @@ class TkToolTip:
 
     # For IDEs and type checkers
     widget: Optional[Widget]
-    text: Union[str, Callable[[], str]]
+    text: Union[str, list[str], Callable[[], Union[str, list[str]]]]
     state: str
     bg: str
     fg: str
@@ -122,7 +124,7 @@ class TkToolTip:
 
     @classmethod
     def create(cls: TkToolTip, widget: Widget, **kwargs: Any) -> 'TkToolTip':
-        """Alias for bind()."""
+        """Binds a tooltip for widget; kwargs limited to PARAMS. - Alias for bind()."""
         return cls.bind(widget, **kwargs)
 
 
@@ -156,7 +158,7 @@ class TkToolTip:
 
 
     def configure(self, **kwargs: Any) -> None:
-        """Alias for config()."""
+        """Update configuration; only keys in PARAMS are accepted. - Alias for config()."""
         self.config(**kwargs)
 
 
@@ -253,9 +255,7 @@ class TkToolTip:
         self.tip_window = Toplevel(self.widget)
         self.tip_window.wm_overrideredirect(True)
         self.tip_window.wm_geometry(f"+{x}+{y}")
-        label = Label(self.tip_window)
-        label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        self._update_tip_label(label)
+        self._build_tooltip_content(self.tip_window)
         self._animate(show=True)
         self._schedule_auto_hide()
 
@@ -332,39 +332,107 @@ class TkToolTip:
         """Update the tooltip if it's currently visible."""
         if not self.tip_window:
             return
-        label: Label = self.tip_window.winfo_children()[0]
-        self._update_tip_label(label)
+        # Rebuild content in case the text type or value changed
+        for child in self.tip_window.winfo_children():
+            try:
+                child.destroy()
+            except Exception:
+                pass
+        self._build_tooltip_content(self.tip_window)
         x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
         self.tip_window.wm_geometry(f"+{x}+{y}")
         self.tip_window.attributes("-alpha", self.opacity)
 
 
-    def _update_tip_label(self, label: Label) -> None:
-        """Configure the given Label with the currently set class values"""
+    def _build_tooltip_content(self, parent: Toplevel) -> None:
+        """Create the content inside the tooltip window.
+        - If text is a string: create a single Label with border/relief
+        - If text is a list: create a Frame (border/relief on Frame only) and a Label per item
+
+        Per-item alignment flags (only for list items):
+            [l] or [left]    -> justify=left,   anchor=w
+            [c] or [center]  -> justify=center, anchor=center
+            [r] or [right]   -> justify=right,  anchor=e
+            [a=<anchor>]     -> explicit anchor override (n, ne, e, se, s, sw, w, nw, center)
+        Flags can be combined at the very start, e.g. "[r][a=ne] Item text".
+        """
+        value = self._get_text()
+        # Map justify to anchor for Label
+        anchor_from_justify = {
+            "left": "w",
+            "center": "center",
+            "right": "e",
+        }.get(self.justify, "center")
         try:
-            label.config(
-                text=self._get_text(),
-                background=self.bg,
-                foreground=self.fg,
-                font=self.font,
-                relief=self.relief,
-                borderwidth=self.borderwidth,
-                justify=self.justify,
-                wraplength=self.wraplength
-            )
+            if isinstance(value, (list, tuple)):
+                # Multi-label tooltip: Frame gets border/relief; labels do not
+                container = Frame(parent, background=self.bg, relief=self.relief, borderwidth=self.borderwidth)
+                container.pack()
+                count = len(value)
+                for idx, item in enumerate(value):
+                    # Parse optional per-item flags
+                    item_text, item_justify, item_anchor = self._parse_item_flags(str(item))
+                    # Resolve effective justify and anchor
+                    eff_justify = item_justify or self.justify
+                    eff_anchor = item_anchor or {
+                        "left": "w",
+                        "center": "center",
+                        "right": "e",
+                    }.get(eff_justify, "center")
+
+                    lbl = Label(
+                        container,
+                        text=item_text,
+                        background=self.bg,
+                        foreground=self.fg,
+                        font=self.font,
+                        justify=eff_justify,
+                        wraplength=self.wraplength,
+                        borderwidth=0,
+                        relief="flat",
+                        anchor=eff_anchor,
+                    )
+                    lbl.pack(fill='x', ipadx=self.ipadx, ipady=self.ipady)
+                    # Add horizontal separator between items (not after the last)
+                    if idx < count - 1:
+                        sep = Separator(container, orient='horizontal')
+                        sep.pack(fill='x')
+            else:
+                # Single-label tooltip: Label gets border/relief
+                lbl = Label(
+                    parent,
+                    text=str(value),
+                    background=self.bg,
+                    foreground=self.fg,
+                    font=self.font,
+                    justify=self.justify,
+                    wraplength=self.wraplength,
+                    borderwidth=self.borderwidth,
+                    relief=self.relief,
+                    anchor=anchor_from_justify,
+                )
+                lbl.pack(ipadx=self.ipadx, ipady=self.ipady)
         except Exception as e:
-            print(f"ERROR: TkToolTip.update_tip_label() - {e}")
+            print(f"ERROR: TkToolTip._build_tooltip_content() - {e}")
 
 
-    def _get_text(self) -> str:
-        """Return the current tooltip text, calling if it's a function."""
+    def _get_text(self) -> Union[str, list[str]]:
+        """Return the current tooltip text, calling if it's a function.
+        May return a string or a list of strings.
+        """
+        value: Union[str, list[str]]
         if callable(self.text):
             try:
-                return self.text()
+                value = self.text()
             except Exception as e:
                 print(f"ERROR: TkToolTip._get_text() - {e}")
                 return ""
-        return self.text
+        else:
+            value = self.text
+        # Normalize tuples to lists for consistency
+        if isinstance(value, tuple):
+            value = list(value)
+        return value
 
 
     #endregion
@@ -398,6 +466,47 @@ class TkToolTip:
                 setattr(self, name if name != "anchor" else "widget_anchor", value)
 
 
+    def _parse_item_flags(self, text: str) -> tuple[str, Optional[str], Optional[str]]:
+        """Parse per-item alignment flags at the start and return (clean_text, justify, anchor)."""
+        s = text.lstrip()
+        just: Optional[str] = None
+        anch: Optional[str] = None
+        # Consume recognized flags only; stop on first unrecognized bracket
+        while True:
+            m = re.match(r'^\[(.*?)\]\s*', s)
+            if not m:
+                break
+            tag = (m.group(1) or "").strip().lower()
+            recognized = False
+            if tag in ("l", "left"):
+                just = "left"
+                if anch is None:
+                    anch = "w"
+                recognized = True
+            elif tag in ("c", "center"):
+                just = "center"
+                if anch is None:
+                    anch = "center"
+                recognized = True
+            elif tag in ("r", "right"):
+                just = "right"
+                if anch is None:
+                    anch = "e"
+                recognized = True
+            elif tag.startswith("a="):
+                val = tag[2:].strip()
+                if val in {"n","ne","e","se","s","sw","w","nw","center"}:
+                    anch = val
+                    recognized = True
+            if recognized:
+                s = s[m.end():]
+            else:
+                break
+        return s, just, anch
+
+
     #endregion
     #endregion
+
+
 #endregion

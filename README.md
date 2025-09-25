@@ -17,6 +17,7 @@ Bind tooltips to any widget that inherits from `tkinter.Widget`, including custo
 - Animations: `fade`, `slide`, or `none` with adjustable `anim_in` and `anim_out`.
 - Opacity control (0.0–1.0) for translucent tooltips.
 - Respects screen bounds and avoids mouse overlap when positioned from the pointer.
+- Multi-item tooltips: pass `list[str]` to render multiple lines with separators; supports per-item alignment flags.
 
 ## Install
 
@@ -94,21 +95,21 @@ root.mainloop()
 
 > Control behavior, positioning, animation, and dynamic features.
 
-| Parameter        | Type                | Default    | Values / Range                                                    | Description                             |
-| ---------------- | ------------------- | ---------- | ----------------------------------------------------------------- | --------------------------------------- |
-| `widget`         | `tkinter.Widget`    | —          | Any widget                                                        | Widget the tooltip is attached to.      |
-| `text`           | `str` or `callable` | `""`       | String or function returning string                               | Content displayed in the tooltip.       |
-| `state`          | `str`               | `"normal"` | `normal`, `disabled`                                              | Activates or disables the tooltip.      |
-| `opacity`        | `float`             | `1.0`      | `0.0`–`1.0`                                                       | Transparency (1.0 = opaque).            |
-| `origin`         | `str`               | `"mouse"`  | `mouse`, `widget`                                                 | Reference point for positioning.        |
-| `widget_anchor`  | `str`               | `"nw"`     | `n`, `ne`, `e`, `se`, `s`, `sw`, `w`, `nw`, `center`, `c`, `nesw` | Widget anchor when origin is `widget`.  |
-| `tooltip_anchor` | `str`               | `"nw"`     | `n`, `ne`, `e`, `se`, `s`, `sw`, `w`, `nw`, `center`, `c`, `nesw` | Tooltip anchor when origin is `widget`. |
-| `follow_mouse`   | `bool`              | `False`    | `True`, `False`                                                   | Track mouse movement while hovering.    |
-| `show_delay`     | `int`               | `100`      | ≥ 0 (ms)                                                          | Delay before showing.                   |
-| `hide_delay`     | `int`               | `5000`     | ≥ 0 (ms)                                                          | Auto-hide delay.                        |
-| `animation`      | `str`               | `"fade"`   | `fade`, `slide`, `none`                                           | Show/hide animation style.              |
-| `anim_in`        | `int`               | `75`       | ≥ 0 (ms)                                                          | Enter animation duration.               |
-| `anim_out`       | `int`               | `50`       | ≥ 0 (ms)                                                          | Exit animation duration.                |
+| Parameter        | Type                             | Default    | Values / Range                                                    | Description                             |
+| ---------------- | -------------------------------- | ---------- | ----------------------------------------------------------------- | --------------------------------------- |
+| `widget`         | `tkinter.Widget`                 | —          | Any widget                                                        | Widget the tooltip is attached to.      |
+| `text`           | `str` · `list[str]` · `callable` | `""`       | String, list of strings, or function returning either             | Tooltip content.                        |
+| `state`          | `str`                            | `"normal"` | `normal`, `disabled`                                              | Activates or disables the tooltip.      |
+| `opacity`        | `float`                          | `1.0`      | `0.0`–`1.0`                                                       | Transparency (1.0 = opaque).            |
+| `origin`         | `str`                            | `"mouse"`  | `mouse`, `widget`                                                 | Reference point for positioning.        |
+| `widget_anchor`  | `str`                            | `"nw"`     | `n`, `ne`, `e`, `se`, `s`, `sw`, `w`, `nw`, `center`, `c`, `nesw` | Widget anchor when origin is `widget`.  |
+| `tooltip_anchor` | `str`                            | `"nw"`     | `n`, `ne`, `e`, `se`, `s`, `sw`, `w`, `nw`, `center`, `c`, `nesw` | Tooltip anchor when origin is `widget`. |
+| `follow_mouse`   | `bool`                           | `False`    | `True`, `False`                                                   | Track mouse movement while hovering.    |
+| `show_delay`     | `int`                            | `100`      | ≥ 0 (ms)                                                          | Delay before showing.                   |
+| `hide_delay`     | `int`                            | `5000`     | ≥ 0 (ms)                                                          | Auto-hide delay.                        |
+| `animation`      | `str`                            | `"fade"`   | `fade`, `slide`, `none`                                           | Show/hide animation style.              |
+| `anim_in`        | `int`                            | `75`       | ≥ 0 (ms)                                                          | Enter animation duration.               |
+| `anim_out`       | `int`                            | `50`       | ≥ 0 (ms)                                                          | Exit animation duration.                |
 
 ## Animation Styles
 
@@ -141,6 +142,36 @@ Tip.ANIMATION = "slide"
 - `tip.config(**options)` / `tip.configure(**options)`
 - `tip.hide()`
 - `tip.unbind()`
+
+## Multi-item tooltips and per-item flags
+
+Pass a list of strings to render multiple items. A thin separator is added between items. When a list is used, the container Frame holds the border/relief; individual Labels are borderless.
+
+Per-item flags (only for list items) can be added at the start of an item:
+
+- [l] or [left] → justify=left, anchor=w
+- [c] or [center] → justify=center, anchor=center
+- [r] or [right] → justify=right, anchor=e
+- [a=anchor] → anchor override (n, ne, e, se, s, sw, w, nw, center)
+
+Example:
+
+```python
+from TkToolTip import TkToolTip as Tip
+
+Tip.bind(widget, text=[
+    "First line",
+    "[l] Left-aligned item",
+    "[r] Right-aligned item",
+    "[a=ne] NE-anchored item",
+    "Last line"
+])
+```
+
+Notes:
+
+- Flags can be combined, e.g. `[r][a=ne]`.
+- For single-string text, a single Label is used and the border/relief are applied directly to it.
 
 ## Project Structure
 
