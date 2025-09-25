@@ -259,7 +259,12 @@ def setup_configuration_groups(control_panel, tooltip, args_var=None):
 
 def create_configuration_vars():
     return {
-        'text': tk.StringVar(value='Editable tooltip.'),
+        # Four text inputs for multi-label tooltips
+        'text1': tk.StringVar(value='Editable tooltip.'),
+        'text2': tk.StringVar(value=''),
+        'text3': tk.StringVar(value=''),
+        'text4': tk.StringVar(value=''),
+        # Standard tooltip variables
         'state': tk.StringVar(value=Tip.STATE),
         'bg': tk.StringVar(value=Tip.BG),
         'fg': tk.StringVar(value=Tip.FG),
@@ -289,7 +294,12 @@ def create_configuration_vars():
 
 def create_content_group(parent, vars):
     group = create_config_group(parent, 'Content / State', 0, 0)
-    create_labeled_entry(group, 'Text:', vars['text'])
+    # Four text entry widgets to support multi-label tooltips
+    create_labeled_entry(group, 'Text 1:', vars['text1'])
+    create_labeled_entry(group, 'Text 2:', vars['text2'])
+    create_labeled_entry(group, 'Text 3:', vars['text3'])
+    create_labeled_entry(group, 'Text 4:', vars['text4'])
+    # State remains here
     create_labeled_combobox(group, 'State:', vars['state'], ['normal', 'disabled'], readonly=True)
 
 
@@ -341,13 +351,24 @@ def setup_variable_tracing(vars: dict[str, tk.Variable], tooltip: Tip, args_var:
     # This function connects all config controls to the tooltip, so changes update it live.
     # It demonstrates how TkToolTip's config method can be used to update tooltip properties dynamically.
     # Every time a control changes, the tooltip is updated in real time, showing the effect of each parameter.
+    def compute_text_value():
+        # Build string-or-list based on how many text entries are non-empty.
+        raw = [vars['text1'].get(), vars['text2'].get(), vars['text3'].get(), vars['text4'].get()]
+        cleaned = [v.strip() for v in raw if v.strip() != '']
+        if len(cleaned) == 0:
+            return ''
+        if len(cleaned) == 1:
+            return cleaned[0]
+        return cleaned
+
     def apply_changes(*_):
         # This function is called whenever a config control changes.
         # It collects all current values and calls tooltip.config.
         font_tuple = (vars['font_family'].get(), vars['font_size'].get(), vars['font_style'].get())
+        text_value = compute_text_value()
         try:
             tooltip.config(
-                text=vars['text'].get(),
+                text=text_value,
                 state=vars['state'].get(),
                 bg=vars['bg'].get(),
                 fg=vars['fg'].get(),
@@ -377,7 +398,7 @@ def setup_variable_tracing(vars: dict[str, tk.Variable], tooltip: Tip, args_var:
         if args_var is not None:
             try:
                 args_dict = {
-                    "text": vars['text'].get(),
+                    "text": text_value,
                     "state": vars['state'].get(),
                     "bg": vars['bg'].get(),
                     "fg": vars['fg'].get(),
