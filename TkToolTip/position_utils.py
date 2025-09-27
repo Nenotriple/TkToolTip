@@ -5,15 +5,18 @@ This module contains functions for calculating and adjusting tooltip positions
 to ensure they stay within screen bounds and don't overlap with the mouse cursor.
 """
 
+
+# Standard
+import sys
+
+# Standard - GUI
+from tkinter import Toplevel, Label, Widget, Event
+
 # Typing
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from . import TkToolTip
-
-# Standard - GUI
-from tkinter import Toplevel, Label, Widget, Event
-
 
 
 def anchor_to_relative(anchor: str) -> tuple[float, float]:
@@ -60,17 +63,16 @@ def calculate_tooltip_position(tip: 'TkToolTip', event: Event) -> tuple[int, int
 def adjust_position_for_screen_bounds(tip: 'TkToolTip', x: int, y: int, mouse_x: int, mouse_y: int, origin: str) -> tuple[int, int]:
     """Adjust tooltip position to keep it within screen bounds and away from mouse."""
     widget: Widget = tip.widget
-    screen_width: int = widget.winfo_screenwidth()
-    screen_height: int = widget.winfo_screenheight()
+    work_left, work_top, work_right, work_bottom = _get_screen_work_area(widget)
     tip_width, tip_height = _estimate_tip_size(tip)
     # Only avoid mouse overlap when origin is "mouse"
     if origin == "mouse":
         mouse_padding = 20
         tip_overlaps_mouse = _check_tip_overlaps_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, mouse_padding)
         if tip_overlaps_mouse:
-            x, y = _reposition_away_from_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, screen_width, screen_height, mouse_padding)
+            x, y = _reposition_away_from_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, work_left, work_top, work_right, work_bottom, mouse_padding)
     # Always ensure tooltip stays within screen bounds
-    x, y = _adjust_for_screen_bounds(x, y, tip_width, tip_height, screen_width, screen_height)
+    x, y = _adjust_for_screen_bounds(x, y, tip_width, tip_height, work_left, work_top, work_right, work_bottom)
     return x, y
 
 
@@ -115,35 +117,73 @@ def _check_tip_overlaps_mouse(x: int, y: int, tip_width: int, tip_height: int, m
     )
 
 
-def _reposition_away_from_mouse(x: int, y: int, tip_width: int, tip_height: int, mouse_x: int, mouse_y: int, screen_width: int, screen_height: int, mouse_padding: int = 20) -> tuple[int, int]:
-    """Try to reposition tooltip away from mouse cursor."""
-    # Try positioning below the mouse first
+def _reposition_away_from_mouse(x: int, y: int, tip_width: int, tip_height: int, mouse_x: int, mouse_y: int, work_left: int, work_top: int, work_right: int, work_bottom: int, mouse_padding: int = 2 ) -> tuple[int, int]:
+    """Try to reposition tooltip away from mouse cursor within the usable screen area."""
+    margin = 5
+    min_x = work_left + margin
+    max_x = work_right - tip_width - margin
+    min_y = work_top + margin
+    max_y = work_bottom - tip_height - margin
+
+    def clamp(val: int, lower: int, upper: int) -> int:
+        if upper < lower:
+            return lower
+        return min(max(val, lower), upper)
+
+    x = clamp(x, min_x, max_x)
+    y = clamp(y, min_y, max_y)
     new_y = mouse_y + mouse_padding
-    if new_y + tip_height <= screen_height - 5:
-        y = new_y
+    if new_y + tip_height <= work_bottom - margin:
+        return x, clamp(new_y, min_y, max_y)
+    new_y = mouse_y - tip_height - mouse_padding
+    if new_y >= work_top + margin:
+        return x, clamp(new_y, min_y, max_y)
+    new_x = mouse_x + mouse_padding
+    if new_x + tip_width <= work_right - margin:
+        x = clamp(new_x, min_x, max_x)
     else:
-        # If below doesn't work, try above
-        new_y = mouse_y - tip_height - mouse_padding
-        if new_y >= 5:
-            y = new_y
-        else:
-            # If neither above nor below works, try to the side
-            new_x = mouse_x + mouse_padding
-            if new_x + tip_width <= screen_width - 5:
-                x = new_x
-            else:
-                x = mouse_x - tip_width - mouse_padding
+        x = clamp(mouse_x - tip_width - mouse_padding, min_x, max_x)
+    preferred_y = mouse_y + mouse_padding if mouse_y <= (work_top + work_bottom) // 2 else mouse_y - tip_height - mouse_padding
+    y = clamp(preferred_y, min_y, max_y)
     return x, y
 
 
-def _adjust_for_screen_bounds(x: int, y: int, tip_width: int, tip_height: int, screen_width: int, screen_height: int) -> tuple[int, int]:
+def _adjust_for_screen_bounds(x: int, y: int, tip_width: int, tip_height: int, work_left: int, work_top: int, work_right: int, work_bottom: int) -> tuple[int, int]:
     """Adjust tooltip position for screen bounds."""
-    if x + tip_width > screen_width:
-        x = screen_width - tip_width - 5
-    if x < 0:
-        x = 5
-    if y + tip_height > screen_height:
-        y = screen_height - tip_height - 5
-    if y < 0:
-        y = 5
+    margin = 5
+    min_x = work_left + margin
+    max_x = work_right - tip_width - margin
+    min_y = work_top + margin
+    max_y = work_bottom - tip_height - margin
+    if max_x < min_x:
+        x = work_left
+    else:
+        x = min(max(x, min_x), max_x)
+    if max_y < min_y:
+        y = work_top
+    else:
+        y = min(max(y, min_y), max_y)
     return x, y
+
+
+def _get_screen_work_area(widget: Widget) -> tuple[int, int, int, int]:
+    """Return the usable screen area, excluding the Windows taskbar when possible."""
+    if sys.platform.startswith("win"):
+        try:
+            import ctypes
+            SPI_GETWORKAREA = 0x0030
+            class RECT(ctypes.Structure):
+                _fields_ = [
+                    ("left", ctypes.c_int),
+                    ("top", ctypes.c_int),
+                    ("right", ctypes.c_int),
+                    ("bottom", ctypes.c_int),
+                ]
+            rect = RECT()
+            if ctypes.windll.user32.SystemParametersInfoW(SPI_GETWORKAREA, 0, ctypes.byref(rect), 0):
+                return rect.left, rect.top, rect.right, rect.bottom
+        except Exception:
+            pass
+    screen_width: int = widget.winfo_screenwidth()
+    screen_height: int = widget.winfo_screenheight()
+    return 0, 0, screen_width, screen_height
