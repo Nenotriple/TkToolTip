@@ -21,7 +21,7 @@ from tkinter.ttk import Separator
 import re  # added
 
 # Local
-from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
+from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds, resolve_tooltip_anchor_offsets
 from .animation_utils import animate_tip_window
 
 
@@ -227,12 +227,12 @@ class TkToolTip:
 
     def _calculate_follow_position(self, event: Event) -> tuple[int, int]:
         """Compute position to place the tooltip near the mouse cursor."""
-        return event.x_root + self.padx, event.y_root + self.pady
+        return self._compute_mouse_anchor_position(event.x_root, event.y_root)
 
 
     def _current_follow_position(self) -> tuple[int, int]:
         """Compute follow position based on current pointer location."""
-        return self.widget.winfo_pointerx() + self.padx, self.widget.winfo_pointery() + self.pady
+        return self._compute_mouse_anchor_position(self.widget.winfo_pointerx(), self.widget.winfo_pointery())
 
 
     def _move_tip(self, x: int, y: int) -> None:
@@ -503,6 +503,13 @@ class TkToolTip:
             else:
                 break
         return s, just, anch
+
+
+    def _compute_mouse_anchor_position(self, anchor_x: int, anchor_y: int) -> tuple[int, int]:
+        tip_width, tip_height, tip_offset_x, tip_offset_y = resolve_tooltip_anchor_offsets(self)
+        x = anchor_x - tip_offset_x + self.padx
+        y = anchor_y - tip_offset_y + self.pady
+        return x, y
 
 
     #endregion

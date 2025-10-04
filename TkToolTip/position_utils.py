@@ -2,7 +2,8 @@
 Position calculation utilities for TkToolTip.
 
 This module contains functions for calculating and adjusting tooltip positions
-to ensure they stay within screen bounds and don't overlap with the mouse cursor.
+to ensure they stay within screen bounds. Note: tooltips are allowed to
+be drawn over the mouse pointer (no avoidance/repositioning).
 """
 
 
@@ -39,43 +40,48 @@ def anchor_to_relative(anchor: str) -> tuple[float, float]:
     return x_rel, y_rel
 
 
+def resolve_tooltip_anchor_offsets(tip: 'TkToolTip') -> tuple[int, int, int, int]:
+    tip_width, tip_height = _estimate_tip_size(tip)
+    t_rel_x, t_rel_y = anchor_to_relative(getattr(tip, "tooltip_anchor", "nw"))
+    tip_offset_x = int(t_rel_x * tip_width)
+    tip_offset_y = int(t_rel_y * tip_height)
+    return tip_width, tip_height, tip_offset_x, tip_offset_y
+
+
 def calculate_tooltip_position(tip: 'TkToolTip', event: Event) -> tuple[int, int]:
     """Calculate the position for the tooltip based on origin and anchor settings."""
     if tip.origin == "mouse":
-        x: int = event.x_root + tip.padx
-        y: int = event.y_root + tip.pady
+        _, _, tip_offset_x, tip_offset_y = resolve_tooltip_anchor_offsets(tip)
+        anchor_px_x = event.x_root
+        anchor_px_y = event.y_root
+        x = anchor_px_x - tip_offset_x + tip.padx
+        y = anchor_px_y - tip_offset_y + tip.pady
         return adjust_position_for_screen_bounds(tip, x, y, event.x_root, event.y_root, tip.origin)
     # origin == "widget"
     widget = tip.widget
+    tip_width, tip_height, tip_offset_x, tip_offset_y = resolve_tooltip_anchor_offsets(tip)
     x0, y0, w, h = _get_widget_geometry(widget)
     w_rel_x, w_rel_y = anchor_to_relative(getattr(tip, "widget_anchor", "nw"))
     # Anchor point on widget
     anchor_px_x = x0 + int(w_rel_x * w)
     anchor_px_y = y0 + int(w_rel_y * h)
-    tip_w, tip_h = _estimate_tip_size(tip)
-    t_rel_x, t_rel_y = anchor_to_relative(getattr(tip, "tooltip_anchor", "nw"))
-    # Offset inside tooltip from its top-left to its anchor point
-    tip_offset_x = int(t_rel_x * tip_w)
-    tip_offset_y = int(t_rel_y * tip_h)
     x = anchor_px_x - tip_offset_x + tip.padx
     y = anchor_px_y - tip_offset_y + tip.pady
+    # Only clamp to screen — do not avoid the mouse pointer
     return adjust_position_for_screen_bounds(tip, x, y, event.x_root, event.y_root, tip.origin)
 
 
 def adjust_position_for_screen_bounds(tip: 'TkToolTip', x: int, y: int, mouse_x: int, mouse_y: int, origin: str) -> tuple[int, int]:
-    """Adjust tooltip position to keep it within screen bounds and away from mouse."""
-    widget: Widget = tip.widget
-    work_left, work_top, work_right, work_bottom = _get_screen_work_area(widget)
+    """Adjust tooltip position to keep it within screen bounds.
+
+    NOTE: This function no longer performs any repositioning to avoid the mouse cursor.
+    The tooltip may be drawn over the mouse; only screen-bound clamping is applied.
+    """
+    work_left, work_top, work_right, work_bottom = _get_screen_work_area(tip.widget)
     tip_width, tip_height = _estimate_tip_size(tip)
-    # Only avoid mouse overlap when origin is "mouse"
-    if origin == "mouse":
-        mouse_padding = 20
-        tip_overlaps_mouse = _check_tip_overlaps_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, mouse_padding)
-        if tip_overlaps_mouse:
-            x, y = _reposition_away_from_mouse(x, y, tip_width, tip_height, mouse_x, mouse_y, work_left, work_top, work_right, work_bottom, mouse_padding)
-    # Always ensure tooltip stays within screen bounds
-    x, y = _adjust_for_screen_bounds(x, y, tip_width, tip_height, work_left, work_top, work_right, work_bottom)
-    return x, y
+
+    # Ensure tooltip stays within screen bounds (clamp to work area with a small margin)
+    return _adjust_for_screen_bounds(x, y, tip_width, tip_height, work_left, work_top, work_right, work_bottom)
 
 
 def _get_widget_geometry(widget: Widget) -> tuple[int, int, int, int]:
@@ -153,45 +159,45 @@ def _estimate_tip_size(tip: 'TkToolTip') -> tuple[int, int]:
     return tip_width, tip_height
 
 
-def _check_tip_overlaps_mouse(x: int, y: int, tip_width: int, tip_height: int, mouse_x: int, mouse_y: int, mouse_padding: int = 20) -> bool:
-    """Check if tooltip overlaps with mouse cursor."""
-    return (
-        mouse_x >= x - mouse_padding and mouse_x <= x + tip_width + mouse_padding and
-        mouse_y >= y - mouse_padding and mouse_y <= y + tip_height + mouse_padding
-    )
-
-
-def _reposition_away_from_mouse(x: int, y: int, tip_width: int, tip_height: int, mouse_x: int, mouse_y: int, work_left: int, work_top: int, work_right: int, work_bottom: int, mouse_padding: int = 2 ) -> tuple[int, int]:
-    """Try to reposition tooltip away from mouse cursor within the usable screen area."""
+def _adjust_for_screen_bounds(x: int, y: int, tip_width: int, tip_height: int, work_left: int, work_top: int, work_right: int, work_bottom: int) -> tuple[int, int]:
+    """Adjust tooltip position for screen bounds."""
     margin = 5
     min_x = work_left + margin
     max_x = work_right - tip_width - margin
     min_y = work_top + margin
     max_y = work_bottom - tip_height - margin
-
-    def clamp(val: int, lower: int, upper: int) -> int:
-        if upper < lower:
-            return lower
-        return min(max(val, lower), upper)
-
-    x = clamp(x, min_x, max_x)
-    y = clamp(y, min_y, max_y)
-    new_y = mouse_y + mouse_padding
-    if new_y + tip_height <= work_bottom - margin:
-        return x, clamp(new_y, min_y, max_y)
-    new_y = mouse_y - tip_height - mouse_padding
-    if new_y >= work_top + margin:
-        return x, clamp(new_y, min_y, max_y)
-    new_x = mouse_x + mouse_padding
-    if new_x + tip_width <= work_right - margin:
-        x = clamp(new_x, min_x, max_x)
+    if max_x < min_x:
+        x = work_left
     else:
-        x = clamp(mouse_x - tip_width - mouse_padding, min_x, max_x)
-    preferred_y = mouse_y + mouse_padding if mouse_y <= (work_top + work_bottom) // 2 else mouse_y - tip_height - mouse_padding
-    y = clamp(preferred_y, min_y, max_y)
+        x = min(max(x, min_x), max_x)
+    if max_y < min_y:
+        y = work_top
+    else:
+        y = min(max(y, min_y), max_y)
     return x, y
 
 
+def _get_screen_work_area(widget: Widget) -> tuple[int, int, int, int]:
+    """Return the usable screen area, excluding the Windows taskbar when possible."""
+    if sys.platform.startswith("win"):
+        try:
+            import ctypes
+            SPI_GETWORKAREA = 0x0030
+            class RECT(ctypes.Structure):
+                _fields_ = [
+                    ("left", ctypes.c_int),
+                    ("top", ctypes.c_int),
+                    ("right", ctypes.c_int),
+                    ("bottom", ctypes.c_int),
+                ]
+            rect = RECT()
+            if ctypes.windll.user32.SystemParametersInfoW(SPI_GETWORKAREA, 0, ctypes.byref(rect), 0):
+                return rect.left, rect.top, rect.right, rect.bottom
+        except Exception:
+            pass
+    screen_width: int = widget.winfo_screenwidth()
+    screen_height: int = widget.winfo_screenheight()
+    return 0, 0, screen_width, screen_height
 def _adjust_for_screen_bounds(x: int, y: int, tip_width: int, tip_height: int, work_left: int, work_top: int, work_right: int, work_bottom: int) -> tuple[int, int]:
     """Adjust tooltip position for screen bounds."""
     margin = 5
