@@ -1,3 +1,10 @@
+
+> ⚠️ **Important! Project Has Moved**
+>
+> This project has been incorperated into the [NenoTk library](https://github.com/Nenotriple/NenoTk).
+>
+> Please use and contribute to that repository instead — this repo may be out of date and will not receive updates or support.
+
 # TkToolTip
 
 Bind tooltips to any widget that inherits from `tkinter.Widget`, including custom widgets.
