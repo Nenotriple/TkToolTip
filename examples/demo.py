@@ -9,8 +9,12 @@ Showcases all features of the TkToolTip module in an interactive GUI.
 #region Imports
 
 
+# Standard
 import os
 import sys
+import time
+
+# Standard - GUI
 import tkinter as tk
 from tkinter import ttk, colorchooser, font as tkfont
 
@@ -27,6 +31,10 @@ if _PROJECT_ROOT not in sys.path:
 
 
 from TkToolTip import TkToolTip as Tip
+
+# You can override TkToolTip defaults like this, which will apply to all tooltips that do not explicitly set these options.
+Tip.ANIMATION = "slide"
+Tip.HIDE_DELAY = 8000
 
 
 #endregion
@@ -62,7 +70,7 @@ def setup_ui(root):
     build_demo_sections(container)
 
 
-def setup_scroll_bindings(canvas, container, window_id):
+def setup_scroll_bindings(canvas: tk.Canvas, container: ttk.Frame, window_id: int):
     def configure_scrollregion(event):
         canvas.configure(scrollregion=canvas.bbox('all'))
         canvas.itemconfig(window_id, width=canvas.winfo_width())
@@ -108,24 +116,45 @@ def build_anchor_follow_callback_section(parent):
 
 def build_anchor_section(parent):
     # Demonstrates how anchor positions affect tooltip placement when origin="widget"
-    section_frame = create_section(parent, "Anchors (origin=widget)")
+    section_frame = create_section(parent, "Anchors (origin=widget, and widget_anchor as labeled)")
     container = ttk.Frame(section_frame)
     container.pack(pady=12, expand=True)
     grid_frame = ttk.Frame(container)
     grid_frame.pack()
     anchor_positions = {
-        'nw': (0, 0), 'n': (0, 1), 'ne': (0, 2),
-        'w': (1, 0), 'center': (1, 1), 'e': (1, 2),
-        'sw': (2, 0), 's': (2, 1), 'se': (2, 2),
+        'nw': (0, 0), 'n':      (0, 1), 'ne': (0, 2),
+        'w':  (1, 0), 'center': (1, 1), 'e':  (1, 2),
+        'sw': (2, 0), 's':      (2, 1), 'se': (2, 2),
     }
     for i in range(3):
         grid_frame.columnconfigure(i, weight=1)
         grid_frame.rowconfigure(i, weight=1)
+    # Store buttons and their tooltips for later update
+    buttons = []
+    tooltips = []
     for anchor, (row, col) in anchor_positions.items():
         button = ttk.Button(grid_frame, text=anchor, width=12)
         button.grid(row=row, column=col, padx=6, pady=6, sticky='nsew', ipadx=10, ipady=20)
-        # Each button demonstrates a different anchor value for the tooltip
-        Tip.bind(button, text=f'anchor={anchor}', origin='widget', anchor=anchor, padx=0, pady=0)
+        tip = Tip.bind(button, text=f'anchor={anchor}', origin='widget', widget_anchor=anchor, padx=0, pady=0)
+        buttons.append(button)
+        tooltips.append(tip)
+    # Add combobox for tooltip_anchor selection
+    anchor_choices = ['nw', 'n', 'ne', 'w', 'center', 'e', 'sw', 's', 'se']
+    cb_frame = ttk.Frame(container)
+    cb_frame.pack(pady=(12, 0))
+    ttk.Label(cb_frame, text="tooltip_anchor:").pack(side='left', padx=(0, 6))
+    tooltip_anchor_var = tk.StringVar(value='nw')
+    anchor_cb = ttk.Combobox(cb_frame, textvariable=tooltip_anchor_var, values=anchor_choices, state='readonly', width=10)
+    anchor_cb.pack(side='left')
+
+    def update_tooltip_anchors(*_):
+        val = tooltip_anchor_var.get()
+        for tip in tooltips:
+            tip.config(tooltip_anchor=val)
+
+    tooltip_anchor_var.trace_add('write', update_tooltip_anchors)
+    # Initial update
+    update_tooltip_anchors()
 
 
 def build_follow_section(parent):
@@ -135,7 +164,7 @@ def build_follow_section(parent):
     canvas.pack(fill='both', expand=True, padx=12, pady=12)
     canvas.create_text(10, 10, text="Move the mouse here", fill='white', font=('Segoe UI', 12), anchor='nw')
     # Bind a tooltip to the canvas that follows the mouse
-    # A larger padding prevents mouse overlap issues
+    # A larger, slightly offset padding prevents mouse overlap issues
     Tip.bind(canvas, text="The tooltip tracks the cursor while over the canvas.", follow_mouse=True, padx=8, pady=12, show_delay=50, hide_delay=10000)
 
 
@@ -147,7 +176,6 @@ def build_callback_text_section(parent):
     callback_btn = ttk.Button(section_frame, text="Callback Text")
     callback_btn.pack(fill='x', pady=8, ipadx=10, ipady=10)
 
-    import time
     def dynamic_text():
         # Returns the current time as tooltip text
         return f"Current time: {time.strftime('%H:%M:%S')}"
@@ -176,7 +204,8 @@ def build_dynamic_section(parent):
     args_var.trace_add('write', update_tooltip)
     # Control panel lets users change all tooltip options
     control_panel = create_control_panel(section_frame)
-    setup_configuration_groups(control_panel, dynamic_tip, args_var)
+    _, reset_callback = setup_configuration_groups(control_panel, dynamic_tip, args_var)
+    create_reset_controls(args_frame, reset_callback)
 
 
 def create_arg_entry(args_var, args_frame):
@@ -214,6 +243,12 @@ def create_control_panel(parent):
     return control_frame
 
 
+def create_reset_controls(parent, reset_callback):
+    reset_button = ttk.Button(parent, text="Reset to Defaults", command=reset_callback)
+    reset_button.pack(side='left', padx=(4, 0))
+    Tip.bind(reset_button, text="Restore the configuration panel to the class defaults.", show_delay=300)
+
+
 def setup_configuration_groups(control_panel, tooltip, args_var=None):
     vars = create_configuration_vars()
     create_content_group(control_panel, vars)
@@ -222,7 +257,14 @@ def setup_configuration_groups(control_panel, tooltip, args_var=None):
     create_position_group(control_panel, vars)
     create_border_group(control_panel, vars)
     create_timing_group(control_panel, vars)
+    defaults = {name: var.get() for name, var in vars.items()}
+
+    def reset_to_defaults():
+        for name, var in vars.items():
+            var.set(defaults[name])
+
     setup_variable_tracing(vars, tooltip, args_var)
+    return vars, reset_to_defaults
 
 
 #endregion
@@ -231,7 +273,12 @@ def setup_configuration_groups(control_panel, tooltip, args_var=None):
 
 def create_configuration_vars():
     return {
-        'text': tk.StringVar(value='Editable tooltip.'),
+        # Four text inputs for multi-label tooltips
+        'text1': tk.StringVar(value='Editable tooltip.'),
+        'text2': tk.StringVar(value=''),
+        'text3': tk.StringVar(value=''),
+        'text4': tk.StringVar(value=''),
+        # Standard tooltip variables
         'state': tk.StringVar(value=Tip.STATE),
         'bg': tk.StringVar(value=Tip.BG),
         'fg': tk.StringVar(value=Tip.FG),
@@ -245,7 +292,8 @@ def create_configuration_vars():
         'ipadx': tk.IntVar(value=Tip.IPADX),
         'ipady': tk.IntVar(value=Tip.IPADY),
         'origin': tk.StringVar(value=Tip.ORIGIN),
-        'anchor': tk.StringVar(value=Tip.ANCHOR),
+        'widget_anchor': tk.StringVar(value=Tip.WIDGET_ANCHOR),
+        'tooltip_anchor': tk.StringVar(value=Tip.TOOLTIP_ANCHOR),
         'follow_mouse': tk.BooleanVar(value=Tip.FOLLOW_MOUSE),
         'borderwidth': tk.IntVar(value=Tip.BORDERWIDTH),
         'relief': tk.StringVar(value=Tip.RELIEF),
@@ -260,7 +308,12 @@ def create_configuration_vars():
 
 def create_content_group(parent, vars):
     group = create_config_group(parent, 'Content / State', 0, 0)
-    create_labeled_entry(group, 'Text:', vars['text'])
+    # Four text entry widgets to support multi-label tooltips
+    create_labeled_entry(group, 'Text 1:', vars['text1'])
+    create_labeled_entry(group, 'Text 2:', vars['text2'])
+    create_labeled_entry(group, 'Text 3:', vars['text3'])
+    create_labeled_entry(group, 'Text 4:', vars['text4'])
+    # State remains here
     create_labeled_combobox(group, 'State:', vars['state'], ['normal', 'disabled'], readonly=True)
 
 
@@ -287,7 +340,8 @@ def create_layout_group(parent, vars):
 def create_position_group(parent, vars):
     group = create_config_group(parent, 'Positioning', 1, 0)
     create_labeled_combobox(group, 'Origin:', vars['origin'], ['mouse', 'widget'], readonly=True)
-    create_labeled_combobox(group, 'Anchor:', vars['anchor'], ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center'], readonly=True)
+    create_labeled_combobox(group, 'widget_anchor:', vars['widget_anchor'], ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center'], readonly=True)
+    create_labeled_combobox(group, 'tooltip_anchor:', vars['tooltip_anchor'], ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center'], readonly=True)
     create_labeled_checkbutton(group, 'Follow Mouse:', vars['follow_mouse'])
 
 
@@ -307,17 +361,28 @@ def create_timing_group(parent, vars):
     create_labeled_spinbox(group, 'Anim Out:', vars['anim_out'], 0, 2000, 25)
 
 
-def setup_variable_tracing(vars, tooltip, args_var=None):
+def setup_variable_tracing(vars: dict[str, tk.Variable], tooltip: Tip, args_var: tk.Variable = None):
     # This function connects all config controls to the tooltip, so changes update it live.
     # It demonstrates how TkToolTip's config method can be used to update tooltip properties dynamically.
     # Every time a control changes, the tooltip is updated in real time, showing the effect of each parameter.
+    def compute_text_value():
+        # Build string-or-list based on how many text entries are non-empty.
+        raw = [vars['text1'].get(), vars['text2'].get(), vars['text3'].get(), vars['text4'].get()]
+        cleaned = [v.strip() for v in raw if v.strip() != '']
+        if len(cleaned) == 0:
+            return ''
+        if len(cleaned) == 1:
+            return cleaned[0]
+        return cleaned
+
     def apply_changes(*_):
         # This function is called whenever a config control changes.
         # It collects all current values and calls tooltip.config.
         font_tuple = (vars['font_family'].get(), vars['font_size'].get(), vars['font_style'].get())
+        text_value = compute_text_value()
         try:
             tooltip.config(
-                text=vars['text'].get(),
+                text=text_value,
                 state=vars['state'].get(),
                 bg=vars['bg'].get(),
                 fg=vars['fg'].get(),
@@ -331,7 +396,8 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
                 ipadx=vars['ipadx'].get(),
                 ipady=vars['ipady'].get(),
                 origin=vars['origin'].get(),
-                anchor=vars['anchor'].get(),
+                widget_anchor=vars['widget_anchor'].get(),
+                tooltip_anchor=vars['tooltip_anchor'].get(),
                 follow_mouse=vars['follow_mouse'].get(),
                 show_delay=vars['show_delay'].get(),
                 hide_delay=vars['hide_delay'].get(),
@@ -346,7 +412,7 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
         if args_var is not None:
             try:
                 args_dict = {
-                    "text": vars['text'].get(),
+                    "text": text_value,
                     "state": vars['state'].get(),
                     "bg": vars['bg'].get(),
                     "fg": vars['fg'].get(),
@@ -360,7 +426,8 @@ def setup_variable_tracing(vars, tooltip, args_var=None):
                     "ipadx": vars['ipadx'].get(),
                     "ipady": vars['ipady'].get(),
                     "origin": vars['origin'].get(),
-                    "anchor": vars['anchor'].get(),
+                    "widget_anchor": vars['widget_anchor'].get(),
+                    "tooltip_anchor": vars['tooltip_anchor'].get(),
                     "follow_mouse": vars['follow_mouse'].get(),
                     "show_delay": vars['show_delay'].get(),
                     "hide_delay": vars['hide_delay'].get(),
@@ -411,7 +478,7 @@ def create_labeled_entry(parent, label_text, textvariable):
     return create_labeled_widget(parent, label_text, ttk.Entry, textvariable=textvariable)
 
 
-def create_labeled_combobox(parent, label_text, textvariable, values, readonly=False, width=None):
+def create_labeled_combobox(parent, label_text: str, textvariable: tk.Variable, values: list[str], readonly: bool = False, width: int | None = None):
     options = {'textvariable': textvariable, 'values': values}
     if readonly:
         options['state'] = 'readonly'
@@ -428,7 +495,7 @@ def create_labeled_checkbutton(parent, label_text, variable):
     return create_labeled_widget(parent, label_text, ttk.Checkbutton, variable=variable)
 
 
-def create_color_field(parent, label_text, color_var):
+def create_color_field(parent, label_text: str, color_var: tk.Variable):
     row_frame = ttk.Frame(parent)
     row_frame.pack(fill='x', pady=3)
     label = ttk.Label(row_frame, text=label_text, width=14, anchor='w')
@@ -441,7 +508,7 @@ def create_color_field(parent, label_text, color_var):
     return entry
 
 
-def create_color_swatch(parent, color_var):
+def create_color_swatch(parent, color_var: tk.Variable):
     swatch = tk.Canvas(parent, width=20, height=20, highlightthickness=1, highlightbackground='#888', bd=0)
     swatch.pack(side='left')
     swatch_rect = swatch.create_rectangle(1, 1, 19, 19, outline='', fill=color_var.get())
@@ -457,7 +524,7 @@ def create_color_swatch(parent, color_var):
     return swatch
 
 
-def pick_color(color_var, label_text):
+def pick_color(color_var: tk.Variable, label_text: str):
     initial_color = color_var.get() or '#ffffff'
     result = colorchooser.askcolor(color=initial_color, title=f"Select {label_text.strip(':')}")
     if result and result[1]:

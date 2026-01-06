@@ -11,17 +11,18 @@ Add customizable tooltips to any tkinter widget.
 
 #region Imports
 
-# Standard
+# Typing
 from __future__ import annotations
 from typing import Optional, Tuple, Any, Callable, Dict, Union
 
 # Standard - GUI
-from tkinter import Toplevel, Label, Widget, Event
+from tkinter import Toplevel, Label, Frame, Widget, Event
+from tkinter.ttk import Separator
+import re  # added
 
 # Local
-
-from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds
-from .animation_utils import animate_tip_window, SLIDE_ANIM_DISTANCE
+from .position_utils import calculate_tooltip_position, adjust_position_for_screen_bounds, resolve_tooltip_anchor_offsets
+from .animation_utils import animate_tip_window
 
 
 #endregion
@@ -29,11 +30,13 @@ from .animation_utils import animate_tip_window, SLIDE_ANIM_DISTANCE
 
 
 class TkToolTip:
+
+
     #region Defaults
     # Class-level default parameters
     TEXT = ""
     STATE = "normal"
-    BG = "#ffffee"
+    BG = "white"
     FG = "black"
     FONT: Optional[Tuple[str, int, str]]  = ("TkDefaultFont", 8, "normal")
     BORDERWIDTH = 1
@@ -46,7 +49,8 @@ class TkToolTip:
     IPADX = 2
     IPADY = 2
     ORIGIN = "mouse"
-    ANCHOR = "nw"
+    WIDGET_ANCHOR = "nw"
+    TOOLTIP_ANCHOR = "nw"
     FOLLOW_MOUSE = False
     SHOW_DELAY = 100
     HIDE_DELAY = 5000
@@ -57,13 +61,14 @@ class TkToolTip:
     # list of public parameters
     PARAMS = [
         "text", "state", "bg", "fg", "font", "borderwidth", "opacity", "relief",
-        "justify", "wraplength", "padx", "pady", "ipadx", "ipady", "origin", "anchor",
-        "follow_mouse", "show_delay", "hide_delay", "animation", "anim_in", "anim_out"
+        "justify", "wraplength", "padx", "pady", "ipadx", "ipady",
+        "origin", "widget_anchor", "tooltip_anchor", "follow_mouse",
+        "show_delay", "hide_delay", "animation", "anim_in", "anim_out"
     ]
 
     # For IDEs and type checkers
     widget: Optional[Widget]
-    text: Union[str, Callable[[], str]]
+    text: Union[str, list[str], Callable[[], Union[str, list[str]]]]
     state: str
     bg: str
     fg: str
@@ -78,7 +83,8 @@ class TkToolTip:
     ipadx: int
     ipady: int
     origin: str
-    anchor: str
+    widget_anchor: str
+    tooltip_anchor: str
     follow_mouse: bool
     show_delay: int
     hide_delay: int
@@ -111,9 +117,15 @@ class TkToolTip:
 
 
     @classmethod
-    def bind(cls, widget: Widget, **kwargs: Any) -> 'TkToolTip':
+    def bind(cls: TkToolTip, widget: Widget, **kwargs: Any) -> 'TkToolTip':
         """Binds a tooltip for widget; kwargs limited to PARAMS."""
         return cls(widget, **kwargs)
+
+
+    @classmethod
+    def create(cls: TkToolTip, widget: Widget, **kwargs: Any) -> 'TkToolTip':
+        """Binds a tooltip for widget; kwargs limited to PARAMS. - Alias for bind()."""
+        return cls.bind(widget, **kwargs)
 
 
     def unbind(self) -> None:
@@ -145,6 +157,11 @@ class TkToolTip:
                 self._schedule_auto_hide()
 
 
+    def configure(self, **kwargs: Any) -> None:
+        """Update configuration; only keys in PARAMS are accepted. - Alias for config()."""
+        self.config(**kwargs)
+
+
     def hide(self, event: Optional[Event] = None) -> None:
         """Hide the tooltip and cancel any scheduled events."""
         self._cancel_tip()
@@ -153,9 +170,10 @@ class TkToolTip:
 
 
     #endregion
+    #region Internal methods
+
+
     #region Bindings
-
-
     def _bind_widget(self) -> None:
         """Setup event bindings for the widget."""
         self.widget.bind('<Motion>', self._schedule_show_tip, add="+")
@@ -183,8 +201,8 @@ class TkToolTip:
         if self._suppress_until_leave:
             self._cancel_tip()
             return
-        # If following mouse and already visible, just move the tip
-        if self.follow_mouse and self.tip_window:
+        # If follow_mouse is active and origin is not widget, reposition to pointer
+        if self.follow_mouse and self.origin != "widget" and self.tip_window:
             self._cancel_tip()
             x, y = self._calculate_follow_position(event)
             self._move_tip(x, y)
@@ -198,8 +216,9 @@ class TkToolTip:
         """Display the tooltip at the specified position."""
         if self.state == "disabled" or not self._get_text() or self._suppress_until_leave:
             return
-        if self.follow_mouse:
-            x, y = self._calculate_follow_position(event)  # ignores origin/anchor
+        # If follow_mouse is True and origin is not widget, use mouse position
+        if self.follow_mouse and self.origin != "widget":
+            x, y = self._calculate_follow_position(event)
             x, y = adjust_position_for_screen_bounds(self, x, y, event.x_root, event.y_root, "mouse")
         else:
             x, y = calculate_tooltip_position(self, event)
@@ -208,12 +227,12 @@ class TkToolTip:
 
     def _calculate_follow_position(self, event: Event) -> tuple[int, int]:
         """Compute position to place the tooltip near the mouse cursor."""
-        return event.x_root + self.padx, event.y_root + self.pady
+        return self._compute_mouse_anchor_position(event.x_root, event.y_root)
 
 
     def _current_follow_position(self) -> tuple[int, int]:
         """Compute follow position based on current pointer location."""
-        return self.widget.winfo_pointerx() + self.padx, self.widget.winfo_pointery() + self.pady
+        return self._compute_mouse_anchor_position(self.widget.winfo_pointerx(), self.widget.winfo_pointery())
 
 
     def _move_tip(self, x: int, y: int) -> None:
@@ -236,9 +255,7 @@ class TkToolTip:
         self.tip_window = Toplevel(self.widget)
         self.tip_window.wm_overrideredirect(True)
         self.tip_window.wm_geometry(f"+{x}+{y}")
-        label = Label(self.tip_window)
-        label.pack(ipadx=self.ipadx, ipady=self.ipady)
-        self.update_tip_label(label)
+        self._build_tooltip_content(self.tip_window)
         self._animate(show=True)
         self._schedule_auto_hide()
 
@@ -287,7 +304,8 @@ class TkToolTip:
         if self.hide_id:
             try:
                 self.widget.after_cancel(self.hide_id)
-            except Exception:
+            except Exception as e:
+                print(f"ERROR: TkToolTip._cancel_auto_hide() - {e}")
                 pass
             self.hide_id = None
 
@@ -314,34 +332,107 @@ class TkToolTip:
         """Update the tooltip if it's currently visible."""
         if not self.tip_window:
             return
-        label: Label = self.tip_window.winfo_children()[0]
-        self.update_tip_label(label)
+        # Rebuild content in case the text type or value changed
+        for child in self.tip_window.winfo_children():
+            try:
+                child.destroy()
+            except Exception:
+                pass
+        self._build_tooltip_content(self.tip_window)
         x, y = self.tip_window.winfo_x(), self.tip_window.winfo_y()
         self.tip_window.wm_geometry(f"+{x}+{y}")
         self.tip_window.attributes("-alpha", self.opacity)
 
 
-    def update_tip_label(self, label: Label) -> None:
-        label.config(
-            text=self._get_text(),
-            background=self.bg,
-            foreground=self.fg,
-            font=self.font,
-            relief=self.relief,
-            borderwidth=self.borderwidth,
-            justify=self.justify,
-            wraplength=self.wraplength
-        )
+    def _build_tooltip_content(self, parent: Toplevel) -> None:
+        """Create the content inside the tooltip window.
+        - If text is a string: create a single Label with border/relief
+        - If text is a list: create a Frame (border/relief on Frame only) and a Label per item
+
+        Per-item alignment flags (only for list items):
+            [l] or [left]    -> justify=left,   anchor=w
+            [c] or [center]  -> justify=center, anchor=center
+            [r] or [right]   -> justify=right,  anchor=e
+            [a=<anchor>]     -> explicit anchor override (n, ne, e, se, s, sw, w, nw, center)
+        Flags can be combined at the very start, e.g. "[r][a=ne] Item text".
+        """
+        value = self._get_text()
+        # Map justify to anchor for Label
+        anchor_from_justify = {
+            "left": "w",
+            "center": "center",
+            "right": "e",
+        }.get(self.justify, "center")
+        try:
+            if isinstance(value, (list, tuple)):
+                # Multi-label tooltip: Frame gets border/relief; labels do not
+                container = Frame(parent, background=self.bg, relief=self.relief, borderwidth=self.borderwidth)
+                container.pack()
+                count = len(value)
+                for idx, item in enumerate(value):
+                    # Parse optional per-item flags
+                    item_text, item_justify, item_anchor = self._parse_item_flags(str(item))
+                    # Resolve effective justify and anchor
+                    eff_justify = item_justify or self.justify
+                    eff_anchor = item_anchor or {
+                        "left": "w",
+                        "center": "center",
+                        "right": "e",
+                    }.get(eff_justify, "center")
+
+                    lbl = Label(
+                        container,
+                        text=item_text,
+                        background=self.bg,
+                        foreground=self.fg,
+                        font=self.font,
+                        justify=eff_justify,
+                        wraplength=self.wraplength,
+                        borderwidth=0,
+                        relief="flat",
+                        anchor=eff_anchor,
+                    )
+                    lbl.pack(fill='x', ipadx=self.ipadx, ipady=self.ipady)
+                    # Add horizontal separator between items (not after the last)
+                    if idx < count - 1:
+                        sep = Separator(container, orient='horizontal')
+                        sep.pack(fill='x')
+            else:
+                # Single-label tooltip: Label gets border/relief
+                lbl = Label(
+                    parent,
+                    text=str(value),
+                    background=self.bg,
+                    foreground=self.fg,
+                    font=self.font,
+                    justify=self.justify,
+                    wraplength=self.wraplength,
+                    borderwidth=self.borderwidth,
+                    relief=self.relief,
+                    anchor=anchor_from_justify,
+                )
+                lbl.pack(ipadx=self.ipadx, ipady=self.ipady)
+        except Exception as e:
+            print(f"ERROR: TkToolTip._build_tooltip_content() - {e}")
 
 
-    def _get_text(self) -> str:
-        """Return the current tooltip text, calling if it's a function."""
+    def _get_text(self) -> Union[str, list[str]]:
+        """Return the current tooltip text, calling if it's a function.
+        May return a string or a list of strings.
+        """
+        value: Union[str, list[str]]
         if callable(self.text):
             try:
-                return self.text()
-            except Exception:
+                value = self.text()
+            except Exception as e:
+                print(f"ERROR: TkToolTip._get_text() - {e}")
                 return ""
-        return self.text
+        else:
+            value = self.text
+        # Normalize tuples to lists for consistency
+        if isinstance(value, tuple):
+            value = list(value)
+        return value
 
 
     #endregion
@@ -364,7 +455,7 @@ class TkToolTip:
                     assert value in ["normal", "disabled"], "Invalid state"
                 if name == 'opacity':
                     assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
-                setattr(self, name, value)
+                setattr(self, name if name != "anchor" else "widget_anchor", value)
         # Only set provided params
         else:
             for name, value in kwargs.items():
@@ -372,8 +463,57 @@ class TkToolTip:
                     assert value in ["normal", "disabled"], "Invalid state"
                 if name == 'opacity':
                     assert 0.0 <= value <= 1.0, "Opacity must be between 0.0 and 1.0"
-                setattr(self, name, value)
+                setattr(self, name if name != "anchor" else "widget_anchor", value)
+
+
+    def _parse_item_flags(self, text: str) -> tuple[str, Optional[str], Optional[str]]:
+        """Parse per-item alignment flags at the start and return (clean_text, justify, anchor)."""
+        s = text.lstrip()
+        just: Optional[str] = None
+        anch: Optional[str] = None
+        # Consume recognized flags only; stop on first unrecognized bracket
+        while True:
+            m = re.match(r'^\[(.*?)\]\s*', s)
+            if not m:
+                break
+            tag = (m.group(1) or "").strip().lower()
+            recognized = False
+            if tag in ("l", "left"):
+                just = "left"
+                if anch is None:
+                    anch = "w"
+                recognized = True
+            elif tag in ("c", "center"):
+                just = "center"
+                if anch is None:
+                    anch = "center"
+                recognized = True
+            elif tag in ("r", "right"):
+                just = "right"
+                if anch is None:
+                    anch = "e"
+                recognized = True
+            elif tag.startswith("a="):
+                val = tag[2:].strip()
+                if val in {"n","ne","e","se","s","sw","w","nw","center"}:
+                    anch = val
+                    recognized = True
+            if recognized:
+                s = s[m.end():]
+            else:
+                break
+        return s, just, anch
+
+
+    def _compute_mouse_anchor_position(self, anchor_x: int, anchor_y: int) -> tuple[int, int]:
+        tip_width, tip_height, tip_offset_x, tip_offset_y = resolve_tooltip_anchor_offsets(self)
+        x = anchor_x - tip_offset_x + self.padx
+        y = anchor_y - tip_offset_y + self.pady
+        return x, y
 
 
     #endregion
+    #endregion
+
+
 #endregion
